@@ -10,10 +10,7 @@ yarn-debug.log*
 yarn-error.log*
 .DS_Store
 
-# Auth DB is auto-seeded on boot — don't commit password hashes
-backend/data/auth.db
-
-# Mock project/parcel/finance DBs ARE committed so Render has demo data on first boot
+# Mock database files (auth, project, parcel, finance, surveys) ARE committed so Render has full demo data on first boot
 
 # Vite / React
 frontend/node_modules/

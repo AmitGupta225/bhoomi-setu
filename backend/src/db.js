@@ -297,37 +297,82 @@ export const initDb = async () => {
     await runOn(projectsDb, `ATTACH DATABASE ? AS surveys`, [surveysDbPath]);
   } catch (e) { /* ignore if already attached */ }
 
-  // --- Seed Default Demo Users (runs only if users table is empty) ---
-  const userCount = await new Promise((resolve, reject) => {
-    authDb.get('SELECT COUNT(*) as count FROM users', (err, row) => {
-      if (err) reject(err);
-      else resolve(row.count);
-    });
-  });
-
-  if (userCount === 0) {
-    console.log('Seeding default demo users...');
+  // --- Seed & Synchronize Demo Stakeholder Users ---
+  console.log('Synchronizing core demo stakeholder users...');
+  try {
     const bcrypt = await import('bcryptjs');
     const saltRounds = 10;
+    const defaultHash = await bcrypt.default.hash('password123', saltRounds);
 
     const demoUsers = [
-      { email: 'collector@bhoomi.gov.in',  password: 'Collector@123',  name: 'Rajesh Kumar (Collector)',           role_key: 'collector'    },
-      { email: 'revenue@bhoomi.gov.in',    password: 'Revenue@123',    name: 'Priya Sharma (Revenue Dept)',        role_key: 'revenue_dept' },
-      { email: 'slao@bhoomi.gov.in',       password: 'SLAO@1234',      name: 'Vikram Singh (SLAO)',                role_key: 'slao'         },
-      { email: 'pfms@bhoomi.gov.in',       password: 'PFMS@1234',      name: 'Anita Desai (Finance Officer)',      role_key: 'pfms_officer' },
-      { email: 'rr@bhoomi.gov.in',         password: 'RnR@12345',      name: 'Suresh Nair (R&R Commissioner)',     role_key: 'rr_officer'   },
-      { email: 'surveyor@bhoomi.gov.in',   password: 'Survey@123',     name: 'Amit Gupta (Field Surveyor)',        role_key: 'surveyor'     },
-      { email: 'citizen@bhoomi.gov.in',    password: 'Citizen@123',    name: 'Anil Kumar Patil (Landowner)',       role_key: 'citizen'      },
+      // 8 Core Stakeholder Roles from LoginPage
+      { email: 'collector.palghar@gov.in', password: 'password123', name: 'Dr. Rajesh Verma, IAS (District Collector)', role_key: 'COLLECTOR' },
+      { email: 'nhai.proposals@gov.in', password: 'password123', name: 'Rajiv Sharma (Chief Engineer, NHAI)', role_key: 'REQUIRING_BODY' },
+      { email: 'slao.palghar@gov.in', password: 'password123', name: 'Vikramaditya Deshmukh (SLAO Officer)', role_key: 'SLAO' },
+      { email: 'secy.revenue@maharashtra.gov.in', password: 'password123', name: 'Sanjay Mukherjee, IAS (Principal Secy Revenue)', role_key: 'STATE_GOV' },
+      { email: 'pfms.treasury@gov.in', password: 'password123', name: 'Anil Kumar (PFMS Nodal Officer)', role_key: 'PFMS_OFFICER' },
+      { email: 'rr.commissioner@gov.in', password: 'password123', name: 'Priya Kulkarni (R&R Commissioner)', role_key: 'RR_OFFICER' },
+      { email: 'surveyor.field@gov.in', password: 'password123', name: 'Suresh Patil (Cadastral Inspector)', role_key: 'SURVEYOR' },
+      { email: 'landowner.public@gmail.com', password: 'password123', name: 'Priya Sharma (Affected Landowner)', role_key: 'CITIZEN' },
+
+      // Alternative & Legacy Demo Logins (ensures complete compatibility)
+      { email: 'nhai.proposer@nhai.gov.in', password: 'password123', name: 'Shri Sanjay Deshmukh (NHAI Proposer)', role_key: 'REQUIRING_BODY' },
+      { email: 'finance.pfms@gov.in', password: 'password123', name: 'PFMS Treasury Desk', role_key: 'PFMS_OFFICER' },
+      { email: 'collector@bhoomi.gov.in', password: 'password123', name: 'Rajesh Kumar (Collector)', role_key: 'COLLECTOR' },
+      { email: 'revenue@bhoomi.gov.in', password: 'password123', name: 'Priya Sharma (Revenue Dept)', role_key: 'STATE_GOV' },
+      { email: 'slao@bhoomi.gov.in', password: 'password123', name: 'Vikram Singh (SLAO)', role_key: 'SLAO' },
+      { email: 'pfms@bhoomi.gov.in', password: 'password123', name: 'Anita Desai (Finance Officer)', role_key: 'PFMS_OFFICER' },
+      { email: 'rr@bhoomi.gov.in', password: 'password123', name: 'Suresh Nair (R&R Commissioner)', role_key: 'RR_OFFICER' },
+      { email: 'surveyor@bhoomi.gov.in', password: 'password123', name: 'Amit Gupta (Field Surveyor)', role_key: 'SURVEYOR' },
+      { email: 'citizen@bhoomi.gov.in', password: 'password123', name: 'Anil Kumar Patil (Landowner)', role_key: 'CITIZEN' },
     ];
 
     for (const u of demoUsers) {
-      const hash = await bcrypt.default.hash(u.password, saltRounds);
-      await runOn(authDb,
-        `INSERT OR IGNORE INTO users (email, password, name, role_key) VALUES (?, ?, ?, ?)`,
-        [u.email, hash, u.name, u.role_key]
-      );
+      const cleanEmail = u.email.trim().toLowerCase();
+      const existing = await new Promise((res) => {
+        authDb.get('SELECT id FROM users WHERE LOWER(email) = ?', [cleanEmail], (err, row) => {
+          if (err) res(null);
+          else res(row);
+        });
+      });
+
+      if (!existing) {
+        await runOn(authDb,
+          `INSERT INTO users (email, password, name, role_key) VALUES (?, ?, ?, ?)`,
+          [cleanEmail, defaultHash, u.name, u.role_key]
+        );
+      } else {
+        await runOn(authDb,
+          `UPDATE users SET password = ?, name = ?, role_key = ? WHERE id = ?`,
+          [defaultHash, u.name, u.role_key, existing.id]
+        );
+      }
     }
-    console.log('Demo users seeded successfully.');
+
+    // Auto-seed landowners from parcels table if not already present
+    try {
+      const parcelsOwners = await new Promise((res) => {
+        projectsDb.all(`SELECT DISTINCT owner_email, owner_name FROM parcels WHERE owner_email IS NOT NULL AND owner_email != ''`, (err, rows) => {
+          if (err) res([]);
+          else res(rows || []);
+        });
+      });
+
+      for (const po of parcelsOwners) {
+        const em = po.owner_email.trim().toLowerCase();
+        const nm = po.owner_name ? `${po.owner_name} (Affected Landowner)` : 'Affected Landowner';
+        await runOn(authDb,
+          `INSERT OR IGNORE INTO users (email, password, name, role_key) VALUES (?, ?, ?, 'CITIZEN')`,
+          [em, defaultHash, nm]
+        );
+      }
+    } catch (pe) {
+      console.warn('Parcels auto-seed notice:', pe.message);
+    }
+
+    console.log('Demo stakeholder and landowner accounts synced successfully.');
+  } catch (seedErr) {
+    console.error('Error during demo users sync:', seedErr);
   }
 
   console.log('Multi-database architecture (auth.db, projects.db, finance.db, surveys.db) initialized.');

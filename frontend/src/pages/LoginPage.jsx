@@ -268,11 +268,12 @@ export const LoginPage = () => {
     setSubmitting(false);
 
     if (res.success && res.user) {
-      const roleObj = ROLES[res.user.roleKey] || ROLES[selectedRoleKey] || ROLES['COLLECTOR'];
+      const normalizedRoleKey = (res.user.roleKey || selectedRoleKey || 'COLLECTOR').toUpperCase();
+      const roleObj = ROLES[normalizedRoleKey] || ROLES[selectedRoleKey] || ROLES['COLLECTOR'];
       login({
         name: res.user.name,
         email: res.user.email,
-        roleKey: res.user.roleKey,
+        roleKey: normalizedRoleKey,
         role: roleObj
       });
     } else {

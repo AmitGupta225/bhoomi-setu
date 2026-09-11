@@ -2,7 +2,9 @@ import axios from 'axios';
 
 // In local dev, Vite proxy forwards /api → localhost:5001
 // On Render (static site), VITE_API_BASE_URL must be set to the full backend URL e.g. https://bhoomi-setu-api.onrender.com/api
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
+let rawApiBase = (import.meta.env.VITE_API_BASE_URL || '/api').trim();
+if (rawApiBase.endsWith('/')) rawApiBase = rawApiBase.slice(0, -1);
+const API_BASE = rawApiBase;
 
 export const loginUser = async (email, password) => {
   try {

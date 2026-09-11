@@ -18,6 +18,7 @@ import { handler_28, handler_29, handler_30 } from '../controllers/notificationC
 import { translateText } from '../controllers/translationController.js';
 
 router.post('/login', handler_0);
+router.post('/auth/login', handler_0);
 router.get('/analytics/dashboard', handler_1);
 router.get('/projects', handler_2);
 router.get('/projects/:id', handler_3);
