@@ -1,26 +1,63 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { ProjectDossierBar } from './components/ProjectDossierBar';
-import { LoginPage } from './pages/LoginPage';
-import { ProposalSubmission } from './pages/ProposalSubmission';
-import { NationalDashboard } from './pages/NationalDashboard';
-import { GisSpatialViewer } from './pages/GisSpatialViewer';
-import { ProjectStatus } from './pages/ProjectStatus';
-import { ScrutinyConsole } from './pages/ScrutinyConsole';
-import { PublicGrievances } from './pages/PublicGrievances';
-import { CompensationDisbursement } from './pages/CompensationDisbursement';
-import { RehabilitationResettlement } from './pages/RehabilitationResettlement';
-import { CitizenPortal } from './pages/CitizenPortal';
-import { FieldSurveyMobile } from './pages/FieldSurveyMobile';
-import { DocumentAuditLedger } from './pages/DocumentAuditLedger';
+import { 
+  BarChart3, 
+  GitMerge, 
+  Map, 
+  Layers, 
+  Menu
+} from 'lucide-react';
+
+// Code-split page components with React.lazy
+const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })));
+const ProposalSubmission = lazy(() => import('./pages/ProposalSubmission').then(m => ({ default: m.ProposalSubmission })));
+const NationalDashboard = lazy(() => import('./pages/NationalDashboard').then(m => ({ default: m.NationalDashboard })));
+const GisSpatialViewer = lazy(() => import('./pages/GisSpatialViewer').then(m => ({ default: m.GisSpatialViewer })));
+const ProjectStatus = lazy(() => import('./pages/ProjectStatus').then(m => ({ default: m.ProjectStatus })));
+const ScrutinyConsole = lazy(() => import('./pages/ScrutinyConsole').then(m => ({ default: m.ScrutinyConsole })));
+const PublicGrievances = lazy(() => import('./pages/PublicGrievances').then(m => ({ default: m.PublicGrievances })));
+const CompensationDisbursement = lazy(() => import('./pages/CompensationDisbursement').then(m => ({ default: m.CompensationDisbursement })));
+const RehabilitationResettlement = lazy(() => import('./pages/RehabilitationResettlement').then(m => ({ default: m.RehabilitationResettlement })));
+const CitizenPortal = lazy(() => import('./pages/CitizenPortal').then(m => ({ default: m.CitizenPortal })));
+const FieldSurveyMobile = lazy(() => import('./pages/FieldSurveyMobile').then(m => ({ default: m.FieldSurveyMobile })));
+const DocumentAuditLedger = lazy(() => import('./pages/DocumentAuditLedger').then(m => ({ default: m.DocumentAuditLedger })));
+
+const ViewLoader = () => (
+  <div className="flex-1 flex flex-col items-center justify-center p-8 space-y-3 min-h-[300px]">
+    <div className="w-8 h-8 rounded-full border-2 border-emerald-500/30 border-t-emerald-400 animate-spin"></div>
+    <span className="text-xs text-slate-400 font-medium">Loading Workspace...</span>
+  </div>
+);
 
 export function MainLayout() {
-  const { isAuthenticated, activeTab, setActiveTab, isTabAllowed } = useAuth();
+  const { 
+    isAuthenticated, 
+    activeTab, 
+    setActiveTab, 
+    isTabAllowed, 
+    activeRole,
+    isMobileMenuOpen,
+    setIsMobileMenuOpen,
+    t
+  } = useAuth();
+
+  React.useEffect(() => {
+    window.__setActiveTab = setActiveTab;
+  }, [setActiveTab]);
 
   if (!isAuthenticated) {
-    return <LoginPage />;
+    return (
+      <Suspense fallback={
+        <div className="min-h-screen bg-[#071120] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full border-2 border-emerald-500/30 border-t-emerald-400 animate-spin"></div>
+        </div>
+      }>
+        <LoginPage />
+      </Suspense>
+    );
   }
 
   const renderActiveView = () => {
@@ -48,32 +85,76 @@ export function MainLayout() {
       case 'documents':
         return <DocumentAuditLedger />;
       default:
-        return<NationalDashboard onNavigate={(tab) => setActiveTab(tab)} />;
+        return <NationalDashboard onNavigate={(tab) => setActiveTab(tab)} />;
     }
   };
 
+  // Select 4 primary shortcuts for mobile bottom bar
+  const bottomBarItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+    { id: 'workflow', label: 'Status', icon: GitMerge },
+    { id: 'gis', label: 'Map', icon: Map },
+    // 4th slot: role-specific primary tab
+    activeRole.defaultTab !== 'dashboard' && activeRole.defaultTab !== 'gis' && activeRole.defaultTab !== 'workflow'
+      ? { id: activeRole.defaultTab, label: 'Workspace', icon: Layers }
+      : { id: 'documents', label: 'Vault', icon: Layers }
+  ].filter(item => isTabAllowed(item.id));
+
   return (
     <div className="h-screen bg-slate-950 text-slate-100 flex flex-col font-sans max-w-full overflow-hidden relative">
-      {/* Colorful Background Gradients matching the Login Page Feel */}
+      {/* Colorful Background Gradients matching the Portal Theme */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
         <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] bg-emerald-900/20 blur-[120px] rounded-full"></div>
         <div className="absolute bottom-[10%] -right-[10%] w-[40%] h-[60%] bg-cyan-900/10 blur-[100px] rounded-full"></div>
         <div className="absolute top-[40%] left-[30%] w-[30%] h-[30%] bg-teal-900/10 blur-[100px] rounded-full"></div>
       </div>
-      <div className="relative z-10 flex flex-col h-full w-full">
-      <Header />
-      <div className="flex-1 flex min-w-0 overflow-hidden">
-        <Sidebar />
-        
-        
 
-        <main className={`flex-1 overflow-x-hidden ${activeTab === 'gis' ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-6'} flex flex-col min-w-0`}>
-          {activeTab !== 'dashboard' && activeTab !== 'citizen' && activeTab !== 'proposal' && <ProjectDossierBar />}
-          <div className={`flex-1 min-w-0 max-w-full overflow-x-hidden ${activeTab === 'gis' ? 'flex flex-col h-full overflow-hidden' : ''}`}>
-            {renderActiveView()}
-          </div>
-        </main>
-      </div>
+      <div className="relative z-10 flex flex-col h-full w-full">
+        <Header />
+
+        <div className="flex-1 flex min-w-0 overflow-hidden relative">
+          <Sidebar />
+
+          <main className={`flex-1 overflow-x-hidden ${activeTab === 'gis' ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-20 md:pb-6'} flex flex-col min-w-0`}>
+            {activeTab !== 'dashboard' && activeTab !== 'citizen' && activeTab !== 'proposal' && <ProjectDossierBar />}
+            <div className={`flex-1 min-w-0 max-w-full overflow-x-hidden ${activeTab === 'gis' ? 'flex flex-col h-full overflow-hidden' : ''}`}>
+              <Suspense fallback={<ViewLoader />}>
+                {renderActiveView()}
+              </Suspense>
+            </div>
+          </main>
+        </div>
+
+        {/* ── Mobile Bottom Quick Navigation Bar (md:hidden) ────────── */}
+        <nav className="md:hidden fixed bottom-0 inset-x-0 bg-slate-900/95 backdrop-blur-lg border-t border-slate-800 z-40 px-2 py-1.5 flex items-center justify-around shadow-2xl">
+          {bottomBarItems.map(item => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition ${
+                  isActive 
+                    ? 'text-emerald-400 font-bold' 
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Icon size={18} className={isActive ? 'text-emerald-400' : 'text-slate-400'} />
+                <span className="text-[10px] leading-tight">{t(item.label)}</span>
+              </button>
+            );
+          })}
+
+          {/* "More / Menu" button toggles full mobile drawer */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-slate-400 hover:text-white transition"
+          >
+            <Menu size={18} className="text-slate-400" />
+            <span className="text-[10px] leading-tight">{t('More')}</span>
+          </button>
+        </nav>
       </div>
     </div>
   );

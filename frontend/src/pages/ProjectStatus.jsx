@@ -150,10 +150,10 @@ export const ProjectStatus = () => {
         <div className="space-y-1 min-w-0">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-400">
             <GitMerge className="w-4 h-4 shrink-0" />
-            <span>Land Acquisition Project Monitoring</span>
+            <span>{t('Land Acquisition Project Monitoring')}</span>
           </div>
-          <h1 className="text-2xl font-extrabold font-heading text-white truncate">Project Status & Step Timeline</h1>
-          <p className="text-xs text-slate-400">Track project milestones, proposal details, land acquisition progress, and official updates.</p>
+          <h1 className="text-2xl font-extrabold font-heading text-white truncate">{t('Project Status & Step Timeline')}</h1>
+          <p className="text-xs text-slate-400">{t('Track project milestones, proposal details, land acquisition progress, and official updates.')}</p>
         </div>
 
         {/* Quick Cross-System Links */}
@@ -164,7 +164,7 @@ export const ProjectStatus = () => {
               className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-slate-950 text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-lg"
             >
               <ShieldAlert className="w-4 h-4" />
-              <span>Official Scrutiny Desk</span>
+              <span>{t('Official Scrutiny Desk')}</span>
             </button>
           )}
           {isTabAllowed('gis') && (
@@ -173,7 +173,7 @@ export const ProjectStatus = () => {
               className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition border border-slate-700 flex items-center gap-1.5"
             >
               <Map className="w-4 h-4 text-cyan-400" />
-              <span>GIS Map</span>
+              <span>{t('GIS Map')}</span>
             </button>
           )}
           {isTabAllowed('compensation') && (
@@ -182,7 +182,7 @@ export const ProjectStatus = () => {
               className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition border border-slate-700 flex items-center gap-1.5"
             >
               <IndianRupee className="w-4 h-4 text-emerald-400" />
-              <span>PFMS Payouts</span>
+              <span>{t('PFMS Payouts')}</span>
             </button>
           )}
         </div>
@@ -196,20 +196,20 @@ export const ProjectStatus = () => {
               <span className="font-mono text-emerald-400 font-bold px-2.5 py-0.5 bg-emerald-950/60 border border-emerald-500/30 rounded-md">
                 {projectDetail.code}
               </span>
-              <span className="text-slate-300 font-semibold">{projectDetail.agency}</span>
+              <span className="text-slate-300 font-semibold">{t(projectDetail.agency)}</span>
             </div>
-            <h2 className="text-xl font-extrabold text-white font-heading">{projectDetail.name}</h2>
+            <h2 className="text-xl font-extrabold text-white font-heading">{t(projectDetail.name)}</h2>
             <p className="text-xs text-slate-400 flex items-center gap-1">
               <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-              <span>Location:<strong>{projectDetail.district}, {projectDetail.state}</strong></span>
+              <span>{t('Location:')} <strong>{t(projectDetail.district)}, {t(projectDetail.state)}</strong></span>
             </p>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
             <div className="px-5 py-3.5 bg-emerald-950/60 border border-emerald-500/40 rounded-2xl text-right shadow-lg">
-              <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block mb-1">Current Milestone</span>
+              <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block mb-1">{t('Current Milestone')}</span>
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-xl text-emerald-300 font-extrabold text-sm">
-                <span>Step {projectDetail.current_stage_id}: {projectDetail.status}</span>
+                <span>{t('Step')} {projectDetail.current_stage_id}: {t(projectDetail.status)}</span>
               </div>
             </div>
           </div>
@@ -218,10 +218,10 @@ export const ProjectStatus = () => {
         {/* 4 Summary KPI Metric Widgets in Main Body */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs pt-1">
           <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-2xl space-y-1.5">
-            <span className="text-slate-400 text-[11px] block">Land Acquisition Progress:</span>
+            <span className="text-slate-400 text-[11px] block">{t('Land Acquisition Progress:')}</span>
             <div className="flex items-center justify-between">
-              <strong className="text-emerald-400 font-mono text-sm">{acquiredPercent}% Acquired</strong>
-              <span className="text-[10px] text-slate-400 font-mono">({projectDetail.total_land_acquired_ha} / {projectDetail.total_land_proposed_ha} Ha)</span>
+              <strong className="text-emerald-400 font-mono text-sm">{acquiredPercent}% {t('Acquired')}</strong>
+              <span className="text-[10px] text-slate-400 font-mono">({projectDetail.total_land_acquired_ha} / {projectDetail.total_land_proposed_ha} {t('Ha')})</span>
             </div>
             <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden mt-1">
               <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${acquiredPercent}%` }}></div>
@@ -229,24 +229,24 @@ export const ProjectStatus = () => {
           </div>
 
           <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-2xl space-y-1.5">
-            <span className="text-slate-400 text-[11px] block">Compensation Disbursed:</span>
-            <div className="text-cyan-400 font-mono text-sm font-bold">₹ {projectDetail.compensation_disbursed_cr} Cr</div>
-            <span className="text-[10px] text-slate-500 block">Total Budget: ₹ {projectDetail.estimated_budget_cr} Cr</span>
+            <span className="text-slate-400 text-[11px] block">{t('Compensation Disbursed:')}</span>
+            <div className="text-cyan-400 font-mono text-sm font-bold">₹ {projectDetail.compensation_disbursed_cr} {t('Cr')}</div>
+            <span className="text-[10px] text-slate-500 block">{t('Total Budget:')} ₹ {projectDetail.estimated_budget_cr} {t('Cr')}</span>
           </div>
 
           {/* Full Sponsoring Ministry & Agency Display - NO TRUNCATION */}
           <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-2xl space-y-1.5">
-            <span className="text-slate-400 text-[11px] block">Sponsoring Ministry & Agency:</span>
-            <div className="text-slate-200 font-semibold text-xs leading-normal">{projectDetail.ministry}</div>
-            <div className="text-[11px] text-emerald-400 font-medium leading-normal">{projectDetail.agency}</div>
+            <span className="text-slate-400 text-[11px] block">{t('Sponsoring Ministry & Agency:')}</span>
+            <div className="text-slate-200 font-semibold text-xs leading-normal">{t(projectDetail.ministry)}</div>
+            <div className="text-[11px] text-emerald-400 font-medium leading-normal">{t(projectDetail.agency)}</div>
           </div>
 
           <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-2xl space-y-1.5">
-            <span className="text-slate-400 text-[11px] block">Target Completion Date:</span>
+            <span className="text-slate-400 text-[11px] block">{t('Target Completion Date:')}</span>
             <div className="text-amber-400 font-semibold text-xs">{projectDetail.target_completion_date || '2028-12-31'}</div>
             <div className="pt-1.5 border-t border-slate-800/80 mt-1.5">
-              <span className="text-slate-500 text-[10px] block font-mono">Predictive Analytics (Est. Date)</span>
-              <span className="text-[11px] text-emerald-400 block font-bold tracking-wide">2028-11-15 (45 Days Early)</span>
+              <span className="text-slate-500 text-[10px] block font-mono">{t('Predictive Analytics (Est. Date)')}</span>
+              <span className="text-[11px] text-emerald-400 block font-bold tracking-wide">2028-11-15 ({t('45 Days Early')})</span>
             </div>
           </div>
         </div>
@@ -256,10 +256,10 @@ export const ProjectStatus = () => {
       <div className="bg-slate-900/90 border border-slate-800 p-6 rounded-3xl space-y-6 shadow-xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
           <div className="space-y-1">
-            <h2 className="text-lg font-extrabold text-white font-heading">10-Step Sequential Legal Process Pipeline</h2>
-            <p className="text-xs text-slate-400">RFCTLARR Act 2013 Statutory Progression Workflow</p>
+            <h2 className="text-lg font-extrabold text-white font-heading">{t('10-Step Sequential Legal Process Pipeline')}</h2>
+            <p className="text-xs text-slate-400">{t('RFCTLARR Act 2013 Statutory Progression Workflow')}</p>
           </div>
-          <span className="text-xs text-slate-300 font-mono bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700">Project Code:<strong className="text-emerald-400">{projectDetail.code}</strong>
+          <span className="text-xs text-slate-300 font-mono bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700">{t('Project Code:')} <strong className="text-emerald-400">{projectDetail.code}</strong>
           </span>
         </div>
 
@@ -294,30 +294,30 @@ export const ProjectStatus = () => {
                   <span className={`text-xs font-extrabold font-mono px-3.5 py-1.5 rounded-xl border shadow-sm ${
                     isCompleted ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : isReturned ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : isRejected ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' : 'bg-slate-800 text-slate-400 border-slate-700'
                   }`}>
-                    Step {st.stage_number}
+                    {t('Step')} {st.stage_number}
                   </span>
 
                   <div className="flex items-center gap-1.5">
                     {isCompleted ? (
                       <span className="text-xs font-extrabold text-emerald-400 flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-                        <CheckCircle2 className="w-4 h-4 shrink-0" />Approved</span>) : isReturned ? (<span className="text-xs font-extrabold text-amber-400 flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                        <RotateCcw className="w-4 h-4 shrink-0" />Returned</span>) : isRejected ? (<span className="text-xs font-extrabold text-rose-400 flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 border border-rose-500/20 rounded-xl">
-                        <XCircle className="w-4 h-4 shrink-0" />Rejected</span>) : isInProgress ? (<span className="text-xs font-extrabold text-blue-400 flex items-center gap-1.5 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-                        <Clock className="w-4 h-4 text-blue-400 animate-spin shrink-0" />In Progress</span>
+                        <CheckCircle2 className="w-4 h-4 shrink-0" />{t('Approved')}</span>) : isReturned ? (<span className="text-xs font-extrabold text-amber-400 flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                        <RotateCcw className="w-4 h-4 shrink-0" />{t('Returned')}</span>) : isRejected ? (<span className="text-xs font-extrabold text-rose-400 flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 border border-rose-500/20 rounded-xl">
+                        <XCircle className="w-4 h-4 shrink-0" />{t('Rejected')}</span>) : isInProgress ? (<span className="text-xs font-extrabold text-blue-400 flex items-center gap-1.5 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                        <Clock className="w-4 h-4 text-blue-400 animate-spin shrink-0" />{t('In Progress')}</span>
                     ) : (
-                      <span className="text-xs font-semibold text-slate-400 px-3 py-1 bg-slate-800/60 border border-slate-800 rounded-xl">Pending</span>
+                      <span className="text-xs font-semibold text-slate-400 px-3 py-1 bg-slate-800/60 border border-slate-800 rounded-xl">{t('Pending')}</span>
                     )}
                   </div>
                 </div>
 
                 <div className="space-y-1">
                   <h3 className={`text-sm font-bold leading-normal break-words ${isCompleted ? 'text-emerald-200' : isReturned ? 'text-amber-200' : isRejected ? 'text-rose-200' : 'text-slate-200'}`}>
-                    {cleanStageName(st.stage_name)}
+                    {t(cleanStageName(st.stage_name))}
                   </h3>
                 </div>
 
                 <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between text-xs">
-                  <span className="text-slate-400 text-[11px]">Assigned:<strong className="text-slate-200 font-semibold">{st.assigned_role}</strong>
+                  <span className="text-slate-400 text-[11px]">{t('Assigned:')} <strong className="text-slate-200 font-semibold">{t(st.assigned_role)}</strong>
                   </span>
                 </div>
               </button>
@@ -331,8 +331,8 @@ export const ProjectStatus = () => {
         <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
             <div>
-              <span className="text-xs font-mono text-emerald-400 font-bold">Step {activeStage.stage_number} of 10</span>
-              <h2 className="text-lg font-bold text-white font-heading">{cleanStageName(activeStage.stage_name)}</h2>
+              <span className="text-xs font-mono text-emerald-400 font-bold">{t('Step')} {activeStage.stage_number} {t('of')} 10</span>
+              <h2 className="text-lg font-bold text-white font-heading">{t(cleanStageName(activeStage.stage_name))}</h2>
             </div>
             <span className={`px-3 py-1 rounded-full text-xs font-bold self-start sm:self-auto ${
               activeStage.status === 'Approved' 
@@ -343,28 +343,28 @@ export const ProjectStatus = () => {
                 ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
                 : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
             }`}>
-              Status: {activeStage.status}
+              {t('Status:')} {t(activeStage.status)}
             </span>
           </div>
 
           <p className="text-xs text-slate-300 leading-relaxed bg-slate-950/60 p-4 rounded-2xl border border-slate-800">
-            {activeStage.description}
+            {t(activeStage.description)}
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
             <div className="p-3 bg-slate-800/40 border border-slate-700/60 rounded-xl space-y-1">
-              <span className="text-slate-400">Assigned Authority Role:</span>
-              <div className="font-semibold text-white">{activeStage.assigned_role}</div>
+              <span className="text-slate-400">{t('Assigned Authority Role:')}</span>
+              <div className="font-semibold text-white">{t(activeStage.assigned_role)}</div>
             </div>
 
             <div className="p-3 bg-slate-800/40 border border-slate-700/60 rounded-xl space-y-1">
-              <span className="text-slate-400">Action Date:</span>
-              <div className="font-semibold text-emerald-400">{activeStage.approval_date || 'Pending Action'}</div>
+              <span className="text-slate-400">{t('Action Date:')}</span>
+              <div className="font-semibold text-emerald-400">{activeStage.approval_date || t('Pending Action')}</div>
             </div>
 
             <div className="p-3 bg-slate-800/40 border border-slate-700/60 rounded-xl space-y-1">
-              <span className="text-slate-400">Approved / Verified By:</span>
-              <div className="font-semibold text-slate-200">{activeStage.approved_by || 'Awaiting Review'}</div>
+              <span className="text-slate-400">{t('Approved / Verified By:')}</span>
+              <div className="font-semibold text-slate-200">{t(activeStage.approved_by) || t('Awaiting Review')}</div>
             </div>
           </div>
 
@@ -376,15 +376,15 @@ export const ProjectStatus = () => {
                 ? 'bg-rose-950/40 border-rose-500/40 text-rose-200'
                 : 'bg-slate-800/60 border-slate-700 text-slate-200'
             }`}>
-              <span className="font-bold block uppercase tracking-wider text-[10px]">Official Remarks & Objections:</span>
-              <p className="font-medium">{activeStage.comments}</p>
+              <span className="font-bold block uppercase tracking-wider text-[10px]">{t('Official Remarks & Objections:')}</span>
+              <p className="font-medium">{t(activeStage.comments)}</p>
             </div>
           )}
 
           {actionSuccess && (
             <div className="p-4 bg-emerald-950/80 border border-emerald-500/50 rounded-2xl text-xs font-semibold text-emerald-300 flex items-center gap-2 animate-in fade-in">
               <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-              <span>{actionSuccess}</span>
+              <span>{t(actionSuccess)}</span>
             </div>
           )}
 
@@ -394,14 +394,14 @@ export const ProjectStatus = () => {
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className={`flex items-center gap-2 text-xs font-bold ${isCurrentStageReturned ? 'text-amber-300' : 'text-slate-300'}`}>
                   {isCurrentStageReturned ? <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" /> : <Edit className="w-4 h-4 text-slate-400 shrink-0" />}
-                  <span>{isCurrentStageReturned ? 'Objections Raised by Collectorate' : 'Edit Proposal Details'}</span>
+                  <span>{isCurrentStageReturned ? t('Objections Raised by Collectorate') : t('Edit Proposal Details')}</span>
                 </div>
                 <button
                   onClick={() => setShowRectifyForm(!showRectifyForm)}
                   className={`px-3 py-1.5 font-bold rounded-xl text-xs transition flex items-center gap-1 ${isCurrentStageReturned ? 'bg-amber-500 hover:bg-amber-400 text-slate-950' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}
                 >
                   <Edit className="w-3.5 h-3.5" />
-                  <span>{showRectifyForm ? 'Cancel Edit' : (isCurrentStageReturned ? 'Rectify & Resubmit Proposal Details' : 'Edit Project Details')}</span>
+                  <span>{showRectifyForm ? t('Cancel Edit') : (isCurrentStageReturned ? t('Rectify & Resubmit Proposal Details') : t('Edit Project Details'))}</span>
                 </button>
               </div>
 
@@ -409,7 +409,7 @@ export const ProjectStatus = () => {
                 <form onSubmit={handleRectifySubmit} className={`pt-3 border-t space-y-4 text-xs animate-in fade-in ${isCurrentStageReturned ? 'border-amber-500/30' : 'border-slate-700'}`}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
-                      <label className="text-slate-300 block mb-1">Project Name:</label>
+                      <label className="text-slate-300 block mb-1">{t('Project Name:')}</label>
                       <input
                         type="text"
                         required
@@ -419,22 +419,22 @@ export const ProjectStatus = () => {
                       />
                     </div>
                     <div>
-                      <label className="text-slate-300 block mb-1">Government Body / Ministry:</label>
+                      <label className="text-slate-300 block mb-1">{t('Government Body / Ministry:')}</label>
                       <select
                         value={PREDEFINED_MINISTRIES.includes(rectifyData.ministry) ? rectifyData.ministry : 'CUSTOM'}
                         onChange={(e) => setRectifyData({ ...rectifyData, ministry: e.target.value === 'CUSTOM' ? '' : e.target.value })}
                         className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500"
                       >
                         {PREDEFINED_MINISTRIES.map((m, idx) => (
-                          <option key={idx} value={m}>{m}</option>
+                          <option key={idx} value={m}>{t(m)}</option>
                         ))}
-                        <option value="CUSTOM">+ Custom Ministry</option>
+                        <option value="CUSTOM">+ {t('Custom Ministry')}</option>
                       </select>
                       {!PREDEFINED_MINISTRIES.includes(rectifyData.ministry) && (
                         <input
                           type="text"
                           required
-                          placeholder="Enter Custom Ministry"
+                          placeholder={t('Enter Custom Ministry')}
                           value={rectifyData.ministry || ''}
                           onChange={(e) => setRectifyData({ ...rectifyData, ministry: e.target.value })}
                           className="w-full p-2.5 mt-2 bg-slate-950 border border-amber-500/50 rounded-xl text-white focus:outline-none"
@@ -442,22 +442,22 @@ export const ProjectStatus = () => {
                       )}
                     </div>
                     <div>
-                      <label className="text-slate-300 block mb-1">Project Executing Agency:</label>
+                      <label className="text-slate-300 block mb-1">{t('Project Executing Agency:')}</label>
                       <select
                         value={PREDEFINED_AGENCIES.includes(rectifyData.agency) ? rectifyData.agency : 'CUSTOM'}
                         onChange={(e) => setRectifyData({ ...rectifyData, agency: e.target.value === 'CUSTOM' ? '' : e.target.value })}
                         className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500"
                       >
                         {PREDEFINED_AGENCIES.map((a, idx) => (
-                          <option key={idx} value={a}>{a}</option>
+                          <option key={idx} value={a}>{t(a)}</option>
                         ))}
-                        <option value="CUSTOM">+ Custom Agency</option>
+                        <option value="CUSTOM">+ {t('Custom Agency')}</option>
                       </select>
                       {!PREDEFINED_AGENCIES.includes(rectifyData.agency) && (
                         <input
                           type="text"
                           required
-                          placeholder="Enter Custom Agency"
+                          placeholder={t('Enter Custom Agency')}
                           value={rectifyData.agency || ''}
                           onChange={(e) => setRectifyData({ ...rectifyData, agency: e.target.value })}
                           className="w-full p-2.5 mt-2 bg-slate-950 border border-amber-500/50 rounded-xl text-white focus:outline-none"
@@ -465,19 +465,19 @@ export const ProjectStatus = () => {
                       )}
                     </div>
                     <div>
-                      <label className="text-slate-300 block mb-1">State / Union Territory:</label>
+                      <label className="text-slate-300 block mb-1">{t('State / Union Territory:')}</label>
                       <select
                         value={rectifyData.state || ''}
                         onChange={(e) => setRectifyData({ ...rectifyData, state: e.target.value })}
                         className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500"
                       >
                         {INDIAN_STATES_AND_UTS.map((st, idx) => (
-                          <option key={idx} value={st}>{st}</option>
+                          <option key={idx} value={st}>{t(st)}</option>
                         ))}
                       </select>
                     </div>
                     <div>
-                      <label className="text-slate-300 block mb-1">Target District:</label>
+                      <label className="text-slate-300 block mb-1">{t('Target District:')}</label>
                       <input
                         type="text"
                         required
@@ -487,34 +487,34 @@ export const ProjectStatus = () => {
                       />
                     </div>
                     <div>
-                      <label className="text-slate-300 block mb-1">Project Type:</label>
+                      <label className="text-slate-300 block mb-1">{t('Project Type:')}</label>
                       <select
                         value={rectifyData.project_type || ''}
                         onChange={(e) => setRectifyData({ ...rectifyData, project_type: e.target.value })}
                         className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500"
                       >
-                        <option value="Expressway & Logistics Corridor">Expressway & Logistics Corridor</option>
-                        <option value="Railway Freight Corridor">Railway Freight Corridor</option>
-                        <option value="Irrigation & Dam Project">Irrigation & Dam Project</option>
-                        <option value="Industrial Park / SEZ">Industrial Park / SEZ</option>
-                        <option value="Power Grid / Renewable Energy">Power Grid / Renewable Energy</option>
-                        <option value="Airport / Aviation Infrastructure">Airport / Aviation Infrastructure</option>
+                        <option value="Expressway & Logistics Corridor">{t('Expressway & Logistics Corridor')}</option>
+                        <option value="Railway Freight Corridor">{t('Railway Freight Corridor')}</option>
+                        <option value="Irrigation & Dam Project">{t('Irrigation & Dam Project')}</option>
+                        <option value="Industrial Park / SEZ">{t('Industrial Park / SEZ')}</option>
+                        <option value="Power Grid / Renewable Energy">{t('Power Grid / Renewable Energy')}</option>
+                        <option value="Airport / Aviation Infrastructure">{t('Airport / Aviation Infrastructure')}</option>
                       </select>
                     </div>
                     <div>
-                      <label className="text-slate-300 block mb-1">Project Category:</label>
+                      <label className="text-slate-300 block mb-1">{t('Project Category:')}</label>
                       <select
                         value={rectifyData.project_category || ''}
                         onChange={(e) => setRectifyData({ ...rectifyData, project_category: e.target.value })}
                         className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-amber-500"
                       >
-                        <option value="Government Project">Government Project</option>
-                        <option value="Public Private Partnership (PPP)">Public Private Partnership (PPP)</option>
-                        <option value="Private Infrastructure">Private Infrastructure</option>
+                        <option value="Government Project">{t('Government Project')}</option>
+                        <option value="Public Private Partnership (PPP)">{t('Public Private Partnership (PPP)')}</option>
+                        <option value="Private Infrastructure">{t('Private Infrastructure')}</option>
                       </select>
                     </div>
                     <div>
-                      <label className="text-slate-300 block mb-1">Total Proposed Land (Hectares):</label>
+                      <label className="text-slate-300 block mb-1">{t('Total Proposed Land (Hectares):')}</label>
                       <input
                         type="number"
                         step="0.1"
@@ -525,7 +525,7 @@ export const ProjectStatus = () => {
                       />
                     </div>
                     <div>
-                      <label className="text-slate-300 block mb-1">Estimated Budget (₹ Crores):</label>
+                      <label className="text-slate-300 block mb-1">{t('Estimated Budget (₹ Crores):')}</label>
                       <input
                         type="number"
                         required
@@ -535,7 +535,7 @@ export const ProjectStatus = () => {
                       />
                     </div>
                     <div>
-                      <label className="text-slate-300 block mb-1">Target Completion Date:</label>
+                      <label className="text-slate-300 block mb-1">{t('Target Completion Date:')}</label>
                       <input
                         type="date"
                         required
@@ -551,7 +551,7 @@ export const ProjectStatus = () => {
                       type="submit"
                       className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold rounded-xl text-xs transition shadow-lg w-full sm:w-auto text-center"
                     >
-                      {isCurrentStageReturned ? 'Resubmit Rectified Proposal to Collector' : 'Save Changes'}
+                      {isCurrentStageReturned ? t('Resubmit Rectified Proposal to Collector') : t('Save Changes')}
                     </button>
                   </div>
                 </form>

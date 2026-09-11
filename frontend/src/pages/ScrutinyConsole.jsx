@@ -97,7 +97,7 @@ export const ScrutinyConsole = () => {
     try {
       const res = await updateWorkflowStage(activeStage.id, {
         status: decisionStatus,
-        approved_by: `${activeRole.label}`,
+        approved_by: `${t(activeRole.label)}`,
         comments: comments || `Step ${activeStage.stage_number} decision: ${decisionStatus} by ${activeRole.badge}`
       });
 
@@ -172,20 +172,20 @@ export const ScrutinyConsole = () => {
         <div className="space-y-1 min-w-0">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-400">
             <UserCheck className="w-4 h-4 shrink-0" />
-            <span>Official Approvals & Scrutiny Desk</span>
+            <span>{t('Official Approvals & Scrutiny Desk')}</span>
           </div>
           <h1 className="text-2xl font-extrabold font-heading text-white truncate">
-            Scrutiny & Decision Desk ({activeRole.badge})
+            {t('Scrutiny & Decision Desk')} ({t(activeRole.badge)})
           </h1>
-          <p className="text-xs text-slate-400">Authorized administrative decision portal for<strong>{activeRole.label}</strong>.
+          <p className="text-xs text-slate-400">{t('Authorized administrative decision portal for')} <strong>{t(activeRole.label)}</strong>.
           </p>
         </div>
 
         <div className="p-3 bg-slate-800/80 border border-slate-700/60 rounded-2xl text-xs space-y-0.5 shrink-0">
-          <span className="text-slate-400 block text-[10px] uppercase font-bold">Authorized Authority:</span>
+          <span className="text-slate-400 block text-[10px] uppercase font-bold">{t('Authorized Authority:')}</span>
           <div className="font-bold text-emerald-400 flex items-center gap-2">
             <ShieldCheck className="w-4 h-4" />
-            <span>{activeRole.label}</span>
+            <span>{t(activeRole.label)}</span>
           </div>
         </div>
       </div>
@@ -193,7 +193,7 @@ export const ScrutinyConsole = () => {
       {actionSuccess && (
         <div className="p-4 bg-emerald-950/80 border border-emerald-500/50 rounded-2xl text-xs font-semibold text-emerald-300 flex items-center gap-2 animate-in fade-in">
           <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-          <span>{actionSuccess}</span>
+          <span>{t(actionSuccess)}</span>
         </div>
       )}
 
@@ -205,19 +205,19 @@ export const ScrutinyConsole = () => {
               <span className="font-mono text-emerald-400 font-bold px-2.5 py-0.5 bg-emerald-950/60 border border-emerald-500/30 rounded-md">
                 {projectDetail.code}
               </span>
-              <span className="text-slate-300 font-semibold">{projectDetail.agency}</span>
+              <span className="text-slate-300 font-semibold">{t(projectDetail.agency)}</span>
             </div>
-            <h2 className="text-xl font-extrabold text-white font-heading">{projectDetail.name}</h2>
+            <h2 className="text-xl font-extrabold text-white font-heading">{t(projectDetail.name)}</h2>
             <p className="text-xs text-slate-400 flex items-center gap-1">
               <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-              <span>Location:<strong>{projectDetail.district}, {projectDetail.state}</strong></span>
+              <span>{t('Location:')} <strong>{t(projectDetail.district)}, {t(projectDetail.state)}</strong></span>
             </p>
           </div>
 
           <div className="p-4 bg-emerald-950/40 border border-emerald-500/30 rounded-2xl text-right shrink-0">
-            <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block mb-1">Active Milestone Status</span>
+            <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block mb-1">{t('Active Milestone Status')}</span>
             <span className="text-sm font-extrabold text-emerald-300 px-4 py-1.5 bg-emerald-500/20 border border-emerald-500/30 rounded-xl inline-block shadow-sm">
-              Step {projectDetail.current_stage_id}: {projectDetail.status}
+              {t('Step')} {projectDetail.current_stage_id}: {t(projectDetail.status)}
             </span>
           </div>
         </div>
@@ -225,12 +225,12 @@ export const ScrutinyConsole = () => {
         {/* Full Department & Ministry Display */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-1">
           <div className="p-3.5 bg-slate-950/80 border border-slate-800 rounded-2xl space-y-1">
-            <span className="text-slate-400 text-[11px] block">Sponsoring Ministry:</span>
-            <div className="text-white font-bold text-xs leading-normal">{projectDetail.ministry}</div>
+            <span className="text-slate-400 text-[11px] block">{t('Sponsoring Ministry:')}</span>
+            <div className="text-white font-bold text-xs leading-normal">{t(projectDetail.ministry)}</div>
           </div>
           <div className="p-3.5 bg-slate-950/80 border border-slate-800 rounded-2xl space-y-1">
-            <span className="text-slate-400 text-[11px] block">Implementing Agency:</span>
-            <div className="text-emerald-400 font-bold text-xs leading-normal">{projectDetail.agency}</div>
+            <span className="text-slate-400 text-[11px] block">{t('Implementing Agency:')}</span>
+            <div className="text-emerald-400 font-bold text-xs leading-normal">{t(projectDetail.agency)}</div>
           </div>
         </div>
       </div>
@@ -239,18 +239,18 @@ export const ScrutinyConsole = () => {
       <div className="bg-slate-900/90 border border-slate-800 p-6 rounded-3xl space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-bold text-white font-heading">
-            Steps Authorized for {activeRole.badge} Scrutiny
+            {t(activeRole.badge)} {t('Authorized Stages for Scrutiny')}
           </h2>
           <span className="text-xs text-emerald-400 font-bold">
-            {authorizedStagesForRole.length} Step(s) Legally Assigned
+            {authorizedStagesForRole.length} {t('Step(s) Legally Assigned')}
           </span>
         </div>
 
         {authorizedStagesForRole.length === 0 ? (
           <div className="p-6 bg-slate-950/60 border border-slate-800 rounded-2xl text-center space-y-2 text-xs">
             <ShieldAlert className="w-8 h-8 text-amber-400 mx-auto" />
-            <p className="text-slate-300 font-bold">Your role does not perform step approvals.</p>
-            <p className="text-slate-500">Log in as District Collector, State Govt, SLAO, PFMS Officer, or R&R Commissioner to execute scrutiny decisions.</p>
+            <p className="text-slate-300 font-bold">{t('Your role does not perform step approvals.')}</p>
+            <p className="text-slate-500">{t('Log in as District Collector, State Govt, SLAO, PFMS Officer, or R&R Commissioner to execute scrutiny decisions.')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -274,19 +274,19 @@ export const ScrutinyConsole = () => {
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold font-mono px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                      Step {st.stage_number}
+                      {t('Step')} {st.stage_number}
                     </span>
                     {stepPrereqMet ? (
-                      <span className="text-[10px] font-bold text-emerald-400">✓ Ready for Review</span>
+                      <span className="text-[10px] font-bold text-emerald-400">✓ {t('Ready for Review')}</span>
                     ) : (
                       <span className="text-[10px] font-bold text-amber-400 flex items-center gap-1">
-                        <Lock className="w-3 h-3" />Locked</span>
+                        <Lock className="w-3 h-3" />{t('Locked')}</span>
                     )}
                   </div>
 
                   <div>
-                    <h3 className="text-sm font-bold text-white leading-snug">{cleanStageName(st.stage_name)}</h3>
-                    <p className="text-xs text-slate-400 mt-1">Status:<strong className="text-emerald-300">{st.status}</strong></p>
+                    <h3 className="text-sm font-bold text-white leading-snug">{t(cleanStageName(st.stage_name))}</h3>
+                    <p className="text-xs text-slate-400 mt-1">{t('Status:')} <strong className="text-emerald-300">{t(st.status)}</strong></p>
                   </div>
                 </button>
               );
@@ -302,16 +302,16 @@ export const ScrutinyConsole = () => {
           <div className="lg:col-span-2 bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-4 min-w-0">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
               <div>
-                <span className="text-xs font-mono text-emerald-400 font-bold">Step {activeStage.stage_number} Official Review Desk</span>
-                <h2 className="text-lg font-bold text-white font-heading">{cleanStageName(activeStage.stage_name)}</h2>
+                <span className="text-xs font-mono text-emerald-400 font-bold">{t('Step')} {activeStage.stage_number} {t('Official Review Desk')}</span>
+                <h2 className="text-lg font-bold text-white font-heading">{t(cleanStageName(activeStage.stage_name))}</h2>
               </div>
               <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                {activeStage.status}
+                {t(activeStage.status)}
               </span>
             </div>
 
             <p className="text-xs text-slate-300 leading-relaxed bg-slate-950/60 p-4 rounded-2xl border border-slate-800">
-              {activeStage.description}
+              {t(activeStage.description)}
             </p>
 
             {/* Prerequisite Pending Warning Card */}
@@ -319,43 +319,43 @@ export const ScrutinyConsole = () => {
               <div className="p-4 bg-amber-950/60 border border-amber-500/40 rounded-2xl text-xs space-y-2 text-amber-200">
                 <div className="flex items-center gap-2 font-bold text-amber-400 text-sm">
                   <Lock className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span>Sequential Prerequisite Milestone Pending</span>
+                  <span>{t('Sequential Prerequisite Milestone Pending')}</span>
                 </div>
                 <p className="leading-relaxed">
-                  Step {activeStage.stage_number} ({activeStage.stage_name}) cannot be approved because Step {prevStage.stage_number} (<strong>{prevStage.stage_name}</strong>) is currently<strong>{prevStage.status}</strong>.
+                  {t('Step')} {activeStage.stage_number} ({t(cleanStageName(activeStage.stage_name))}) {t('cannot be approved because Step')} {prevStage.stage_number} (<strong>{t(cleanStageName(prevStage.stage_name))}</strong>) {t('is currently')} <strong>{t(prevStage.status)}</strong>.
                 </p>
                 <div className="p-2.5 bg-slate-950/80 rounded-xl border border-amber-500/30 text-[11px] text-slate-300">
-                  <span>Mandatory Action Required: Step {prevStage.stage_number} must be officially approved by <strong>{prevStage.assigned_role}</strong> before Step {activeStage.stage_number} can be approved.</span>
+                  <span>{t('Mandatory Action Required: Step')} {prevStage.stage_number} {t('must be officially approved by')} <strong>{t(prevStage.assigned_role)}</strong> {t('before Step')} {activeStage.stage_number} {t('can be approved.')}</span>
                 </div>
               </div>
             )}
 
             <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-2xl space-y-2 text-xs">
-              <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block border-b border-slate-800 pb-1">Proposal Technical Parameters Under Review</span>
+              <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block border-b border-slate-800 pb-1">{t('Proposal Technical Parameters Under Review')}</span>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-slate-300 pt-1">
                 <div>
-                  <span className="text-slate-500 text-[10px] block">Project Name:</span>
-                  <strong className="text-white text-xs">{projectDetail.name}</strong>
+                  <span className="text-slate-500 text-[10px] block">{t('Project Name:')}</span>
+                  <strong className="text-white text-xs">{t(projectDetail.name)}</strong>
                 </div>
                 <div>
-                  <span className="text-slate-500 text-[10px] block">District & State:</span>
-                  <strong className="text-white text-xs">{projectDetail.district}, {projectDetail.state}</strong>
+                  <span className="text-slate-500 text-[10px] block">{t('District & State:')}</span>
+                  <strong className="text-white text-xs">{t(projectDetail.district)}, {t(projectDetail.state)}</strong>
                 </div>
                 <div>
-                  <span className="text-slate-500 text-[10px] block">Proposed Land Area:</span>
-                  <strong className="text-emerald-400 font-mono text-xs">{projectDetail.total_land_proposed_ha} Hectares</strong>
+                  <span className="text-slate-500 text-[10px] block">{t('Proposed Land Area:')}</span>
+                  <strong className="text-emerald-400 font-mono text-xs">{projectDetail.total_land_proposed_ha} {t('Hectares')}</strong>
                 </div>
                 <div>
-                  <span className="text-slate-500 text-[10px] block">Estimated Budget:</span>
-                  <strong className="text-cyan-400 font-mono text-xs">₹ {projectDetail.estimated_budget_cr} Cr</strong>
+                  <span className="text-slate-500 text-[10px] block">{t('Estimated Budget:')}</span>
+                  <strong className="text-cyan-400 font-mono text-xs">₹ {projectDetail.estimated_budget_cr} {t('Cr')}</strong>
                 </div>
               </div>
             </div>
 
             {activeStage.comments && (
               <div className="p-4 bg-amber-950/40 border border-amber-500/40 rounded-2xl text-xs space-y-1 text-amber-200">
-                <span className="font-bold block uppercase tracking-wider text-[10px]">Previous Remarks / Objections:</span>
-                <p className="font-medium">{activeStage.comments}</p>
+                <span className="font-bold block uppercase tracking-wider text-[10px]">{t('Previous Remarks / Objections:')}</span>
+                <p className="font-medium">{t(activeStage.comments)}</p>
               </div>
             )}
           </div>
@@ -364,19 +364,19 @@ export const ScrutinyConsole = () => {
           <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-4 min-w-0">
             <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
               <UserCheck className="w-4 h-4 shrink-0" />
-              <span>Official Decision Console</span>
+              <span>{t('Official Decision Console')}</span>
             </div>
 
             <div className="p-3 bg-slate-800/40 rounded-xl border border-slate-700 text-xs space-y-1">
-              <span className="text-slate-400">Authenticated Authority:</span>
-              <div className="font-bold text-white">{activeRole.label}</div>
+              <span className="text-slate-400">{t('Authenticated Authority:')}</span>
+              <div className="font-bold text-white">{t(activeRole.label)}</div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs text-slate-300 font-medium block">Official Remarks & Findings:</label>
+              <label className="text-xs text-slate-300 font-medium block">{t('Official Remarks & Findings:')}</label>
               <textarea
                 rows={3}
-                placeholder="Enter inspection findings, gazette reference numbers, or objections..."
+                placeholder={t('Enter inspection findings, gazette reference numbers, or objections...')}
                 value={comments}
                 onChange={(e) => setComments(e.target.value)}
                 className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
@@ -395,7 +395,7 @@ export const ScrutinyConsole = () => {
                 title={!isPrerequisiteMet ? `Locked: Step ${prevStage?.stage_number} must be Approved first` : ''}
               >
                 {isPrerequisiteMet ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <Lock className="w-4 h-4 shrink-0" />}
-                <span>{isPrerequisiteMet ? `Approve & Advance Step ${activeStage.stage_number}` : `Locked (Step ${prevStage?.stage_number} Pending)`}</span>
+                <span>{isPrerequisiteMet ? `${t('Approve & Advance Step')} ${activeStage.stage_number}` : `${t('Locked')} (${t('Step')} ${prevStage?.stage_number} ${t('Pending')})`}</span>
               </button>
 
               <button
@@ -409,7 +409,7 @@ export const ScrutinyConsole = () => {
                 title={!isPrerequisiteMet ? `Locked: Step ${prevStage?.stage_number} must be Approved first` : ''}
               >
                 <RotateCcw className="w-4 h-4 shrink-0" />
-                <span>Return to Proposer for Re-Scrutiny</span>
+                <span>{t('Return to Proposer for Re-Scrutiny')}</span>
               </button>
 
               <button
@@ -423,7 +423,7 @@ export const ScrutinyConsole = () => {
                 title={!isPrerequisiteMet ? `Locked: Step ${prevStage?.stage_number} must be Approved first` : ''}
               >
                 <XCircle className="w-4 h-4 shrink-0" />
-                <span>Reject Proposal / Step</span>
+                <span>{t('Reject Proposal / Step')}</span>
               </button>
             </div>
           </div>

@@ -15,6 +15,7 @@ import { handler_21, handler_31 } from '../controllers/integrationController.js'
 import { handler_22, handler_23 } from '../controllers/auditController.js';
 import { handler_24, handler_25, handler_26, handler_27 } from '../controllers/grievanceController.js';
 import { handler_28, handler_29, handler_30 } from '../controllers/notificationController.js';
+import { translateText } from '../controllers/translationController.js';
 
 router.post('/login', handler_0);
 router.get('/analytics/dashboard', handler_1);
@@ -48,5 +49,6 @@ router.get('/notifications', handler_28);
 router.post('/notifications', handler_29);
 router.put('/notifications/read', handler_30);
 router.get('/bhu-naksha/verify/:ulpin', handler_31);
+router.post('/translate', translateText);
 
 export default router;

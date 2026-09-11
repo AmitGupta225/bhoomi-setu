@@ -125,10 +125,10 @@ export const ProposalSubmission = ({ onNavigate }) => {
       <div className="bg-gradient-to-r from-emerald-950/80 via-slate-900 to-slate-900 border border-emerald-500/30 p-6 rounded-3xl space-y-2 shadow-2xl">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-400">
           <FilePlus className="w-4 h-4" />
-          <span>Acquisition Proposal Portal</span>
+          <span>{t('Acquisition Proposal Portal')}</span>
         </div>
-        <h1 className="text-2xl font-extrabold font-heading text-white">Submit New Land Acquisition Proposal</h1>
-        <p className="text-xs text-slate-300 max-w-3xl">Initiate new land acquisition dossiers for Central Ministries, State Departments, or Infrastructure Bodies.</p>
+        <h1 className="text-2xl font-extrabold font-heading text-white">{t('Submit New Land Acquisition Proposal')}</h1>
+        <p className="text-xs text-slate-300 max-w-3xl">{t('Initiate new land acquisition dossiers for Central Ministries, State Departments, or Infrastructure Bodies.')}</p>
       </div>
 
       {successResult ? (
@@ -138,27 +138,27 @@ export const ProposalSubmission = ({ onNavigate }) => {
           </div>
 
           <div className="space-y-2">
-            <h2 className="text-xl font-bold text-white font-heading">Land Acquisition Proposal Successfully Created!</h2>
-            <p className="text-xs text-slate-400">Project Identifier:<span className="font-mono text-emerald-400 font-bold">{successResult.projectId}</span>
+            <h2 className="text-xl font-bold text-white font-heading">{t('Land Acquisition Proposal Successfully Created!')}</h2>
+            <p className="text-xs text-slate-400">{t('Project Identifier:')} <span className="font-mono text-emerald-400 font-bold">{successResult.projectId}</span>
             </p>
           </div>
 
           <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl max-w-md mx-auto text-xs space-y-2 text-left text-slate-300">
             <div className="flex justify-between border-b border-slate-800 pb-1">
-              <span className="text-slate-400">Project Title:</span>
+              <span className="text-slate-400">{t('Project Title:')}</span>
               <strong className="text-white">{formData.name}</strong>
             </div>
             <div className="flex justify-between border-b border-slate-800 pb-1">
-              <span className="text-slate-400">Ministry / Agency:</span>
-              <strong className="text-slate-200">{isCustomAgency ? formData.customAgency : formData.agency}</strong>
+              <span className="text-slate-400">{t('Ministry / Agency:')}</span>
+              <strong className="text-slate-200">{t(isCustomAgency ? formData.customAgency : formData.agency)}</strong>
             </div>
             <div className="flex justify-between border-b border-slate-800 pb-1">
-              <span className="text-slate-400">State / District:</span>
-              <strong className="text-slate-200">{formData.state}, {formData.district}</strong>
+              <span className="text-slate-400">{t('State / District:')}</span>
+              <strong className="text-slate-200">{t(formData.state)}, {t(formData.district)}</strong>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">Total Proposed Land:</span>
-              <strong className="text-emerald-400">{formData.total_land_proposed_ha} Hectares</strong>
+              <span className="text-slate-400">{t('Total Proposed Land:')}</span>
+              <strong className="text-emerald-400">{formData.total_land_proposed_ha} {t('Hectares')}</strong>
             </div>
           </div>
 
@@ -167,48 +167,48 @@ export const ProposalSubmission = ({ onNavigate }) => {
               onClick={() => onNavigate('workflow')}
               className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold rounded-2xl text-xs transition shadow-lg inline-flex items-center gap-2"
             >
-              <span>View Project Status</span>
+              <span>{t('View Project Status')}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 lg:p-8 space-y-6 shadow-2xl">
-          <h2 className="text-base font-bold text-white font-heading border-b border-slate-800 pb-3">Infrastructure Proposal & Official Land Requirements</h2>
+          <h2 className="text-base font-bold text-white font-heading border-b border-slate-800 pb-3">{t('Infrastructure Proposal & Official Land Requirements')}</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
             {/* Project Title */}
             <div className="md:col-span-2">
-              <label className="text-slate-300 font-semibold mb-1.5 block">Project Title / Infrastructure Corridor Name:</label>
+              <label className="text-slate-300 font-semibold mb-1.5 block">{t('Project Title / Infrastructure Corridor Name:')}</label>
               <input
                 type="text"
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g. Delhi-Mumbai Industrial Corridor Phase II"
+                placeholder={t('e.g. Delhi-Mumbai Industrial Corridor Phase II')}
                 className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
 
             {/* Ministry Select or Create */}
             <div>
-              <label className="text-slate-300 font-semibold mb-1.5 block">Government Body / Central or State Ministry:</label>
+              <label className="text-slate-300 font-semibold mb-1.5 block">{t('Government Body / Central or State Ministry:')}</label>
               <select
                 value={isCustomMinistry ? 'CUSTOM' : formData.ministry}
                 onChange={(e) => handleMinistryChange(e.target.value)}
                 className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
               >
                 {PREDEFINED_MINISTRIES.map((m, idx) => (
-                  <option key={idx} value={m}>{m}</option>
+                  <option key={idx} value={m}>{t(m)}</option>
                 ))}
-                <option value="CUSTOM">+ Add Custom Government Body / Ministry</option>
+                <option value="CUSTOM">{t('+ Add Custom Government Body / Ministry')}</option>
               </select>
 
               {isCustomMinistry && (
                 <input
                   type="text"
                   required
-                  placeholder="Enter Government Body / Ministry Name"
+                  placeholder={t('Enter Government Body / Ministry Name')}
                   value={formData.customMinistry}
                   onChange={(e) => setFormData({ ...formData, customMinistry: e.target.value })}
                   className="w-full p-3 mt-2 bg-slate-950 border border-emerald-500/50 rounded-xl text-white focus:outline-none"
@@ -218,23 +218,23 @@ export const ProposalSubmission = ({ onNavigate }) => {
 
             {/* Executing Agency Select or Create */}
             <div>
-              <label className="text-slate-300 font-semibold mb-1.5 block">Project Executing Agency / Authority:</label>
+              <label className="text-slate-300 font-semibold mb-1.5 block">{t('Project Executing Agency / Authority:')}</label>
               <select
                 value={isCustomAgency ? 'CUSTOM' : formData.agency}
                 onChange={(e) => handleAgencyChange(e.target.value)}
                 className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
               >
                 {PREDEFINED_AGENCIES.map((a, idx) => (
-                  <option key={idx} value={a}>{a}</option>
+                  <option key={idx} value={a}>{t(a)}</option>
                 ))}
-                <option value="CUSTOM">+ Add Custom Executing Agency</option>
+                <option value="CUSTOM">{t('+ Add Custom Executing Agency')}</option>
               </select>
 
               {isCustomAgency && (
                 <input
                   type="text"
                   required
-                  placeholder="Enter Executing Agency Name"
+                  placeholder={t('Enter Executing Agency Name')}
                   value={formData.customAgency}
                   onChange={(e) => setFormData({ ...formData, customAgency: e.target.value })}
                   className="w-full p-3 mt-2 bg-slate-950 border border-emerald-500/50 rounded-xl text-white focus:outline-none"
@@ -244,34 +244,34 @@ export const ProposalSubmission = ({ onNavigate }) => {
 
             {/* State Select */}
             <div>
-              <label className="text-slate-300 font-semibold mb-1.5 block">State / Union Territory (India):</label>
+              <label className="text-slate-300 font-semibold mb-1.5 block">{t('State / Union Territory (India):')}</label>
               <select
                 value={formData.state}
                 onChange={(e) => setFormData({ ...formData, state: e.target.value })}
                 className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
               >
                 {INDIAN_STATES_AND_UTS.map((st, idx) => (
-                  <option key={idx} value={st}>{st}</option>
+                  <option key={idx} value={st}>{t(st)}</option>
                 ))}
               </select>
             </div>
 
             {/* District */}
             <div>
-              <label className="text-slate-300 font-semibold mb-1.5 block">Target District:</label>
+              <label className="text-slate-300 font-semibold mb-1.5 block">{t('Target District:')}</label>
               <input
                 type="text"
                 required
                 value={formData.district}
                 onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                placeholder="e.g. Thane / Palghar / Gautam Buddha Nagar"
+                placeholder={t('e.g. Thane / Palghar / Gautam Buddha Nagar')}
                 className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
 
             {/* Proposed Land Area */}
             <div>
-              <label className="text-slate-300 font-semibold mb-1.5 block">Total Estimated Land Requirement (Hectares):</label>
+              <label className="text-slate-300 font-semibold mb-1.5 block">{t('Total Estimated Land Requirement (Hectares):')}</label>
               <input
                 type="number"
                 step="0.1"
@@ -284,7 +284,7 @@ export const ProposalSubmission = ({ onNavigate }) => {
 
             {/* Budget */}
             <div>
-              <label className="text-slate-300 font-semibold mb-1.5 block">Estimated Project Budget (₹ Crores):</label>
+              <label className="text-slate-300 font-semibold mb-1.5 block">{t('Estimated Project Budget (₹ Crores):')}</label>
               <input
                 type="number"
                 required
@@ -296,7 +296,7 @@ export const ProposalSubmission = ({ onNavigate }) => {
 
             {/* Project Category */}
             <div>
-              <label className="text-slate-300 font-semibold mb-1.5 block">Project Category:</label>
+              <label className="text-slate-300 font-semibold mb-1.5 block">{t('Project Category:')}</label>
               <select
                 value={formData.project_category}
                 onChange={(e) => {
@@ -308,25 +308,25 @@ export const ProposalSubmission = ({ onNavigate }) => {
                 }}
                 className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
               >
-                <option value="Government Project">Government Project</option>
-                <option value="Public-Private Partnership (PPP)">Public-Private Partnership (PPP)</option>
-                <option value="Private Company Acquisition">Private Company Acquisition</option>
+                <option value="Government Project">{t('Government Project')}</option>
+                <option value="Public-Private Partnership (PPP)">{t('Public-Private Partnership (PPP)')}</option>
+                <option value="Private Company Acquisition">{t('Private Company Acquisition')}</option>
               </select>
               
               {formData.project_category === 'Public-Private Partnership (PPP)' && (
-                <p className="text-[10px] text-amber-400 mt-1 font-semibold">Affected family consent: 70% required</p>
+                <p className="text-[10px] text-amber-400 mt-1 font-semibold">{t('Affected family consent: 70% required')}</p>
               )}
               {formData.project_category === 'Private Company Acquisition' && (
-                <p className="text-[10px] text-amber-400 mt-1 font-semibold">Affected family consent: 80% required</p>
+                <p className="text-[10px] text-amber-400 mt-1 font-semibold">{t('Affected family consent: 80% required')}</p>
               )}
               {formData.project_category === 'Government Project' && (
-                <p className="text-[10px] text-emerald-400 mt-1 font-semibold">No consent required</p>
+                <p className="text-[10px] text-emerald-400 mt-1 font-semibold">{t('No consent required')}</p>
               )}
             </div>
 
             {/* Consent Status */}
             <div>
-              <label className="text-slate-300 font-semibold mb-1.5 block">Affected Family Consent (%):</label>
+              <label className="text-slate-300 font-semibold mb-1.5 block">{t('Affected Family Consent (%):')}</label>
               <input
                 type="number"
                 max="100"
@@ -337,10 +337,10 @@ export const ProposalSubmission = ({ onNavigate }) => {
                 className={`w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500 ${formData.project_category === 'Government Project' ? 'opacity-50 cursor-not-allowed' : ''}`}
               />
               {formData.project_category === 'Public-Private Partnership (PPP)' && Number(formData.consent_percentage) < 70 && (
-                <p className="text-[10px] text-rose-400 mt-1 font-semibold">WARNING: PPP projects legally require minimum 70% consent.</p>
+                <p className="text-[10px] text-rose-400 mt-1 font-semibold">{t('WARNING: PPP projects legally require minimum 70% consent.')}</p>
               )}
               {formData.project_category === 'Private Company Acquisition' && Number(formData.consent_percentage) < 80 && (
-                <p className="text-[10px] text-rose-400 mt-1 font-semibold">WARNING: Private Company acquisitions legally require minimum 80% consent.</p>
+                <p className="text-[10px] text-rose-400 mt-1 font-semibold">{t('WARNING: Private Company acquisitions legally require minimum 80% consent.')}</p>
               )}
             </div>
           </div>
@@ -352,7 +352,7 @@ export const ProposalSubmission = ({ onNavigate }) => {
               className="px-8 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold rounded-2xl text-xs transition shadow-lg shadow-emerald-950/50 flex items-center gap-2"
             >
               <Send className="w-4 h-4" />
-              <span>{loading ? 'Submitting Proposal...' : 'Submit Land Acquisition Proposal'}</span>
+              <span>{loading ? t('Submitting Proposal...') : t('Submit Land Acquisition Proposal')}</span>
             </button>
           </div>
         </form>

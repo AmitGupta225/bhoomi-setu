@@ -251,3 +251,13 @@ export const updateParcelStatus = async (id, status, role, userName) => {
   const res = await axios.put(`${API_BASE}/parcels/${id}/status`, { status, role, user_name: userName });
   return res.data;
 };
+
+export const translateDynamicText = async (text, targetLang, sourceLang = 'en') => {
+  try {
+    const res = await axios.post(`${API_BASE}/translate`, { text, targetLang, sourceLang });
+    return res.data;
+  } catch (err) {
+    return { success: false, translated: text };
+  }
+};
+

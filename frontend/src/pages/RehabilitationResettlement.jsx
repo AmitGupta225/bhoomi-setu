@@ -69,16 +69,16 @@ export const RehabilitationResettlement = () => {
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-purple-400">
             <Home className="w-4 h-4" />
-            <span>Schedule II & III RFCTLARR Resettlement Scheme</span>
+            <span>{t('Schedule II & III RFCTLARR Resettlement Scheme')}</span>
           </div>
-          <h1 className="text-2xl font-extrabold font-heading text-white mt-1">Rehabilitation & Resettlement (R&R) Family Tracker</h1>
-          <p className="text-xs text-slate-400">Monitoring displaced families, housing site allotments, annuity allowances, and skill development</p>
+          <h1 className="text-2xl font-extrabold font-heading text-white mt-1">{t('Rehabilitation & Resettlement (R&R) Family Tracker')}</h1>
+          <p className="text-xs text-slate-400">{t('Monitoring displaced families, housing site allotments, annuity allowances, and skill development')}</p>
         </div>
 
         <div className="flex items-center gap-4 bg-slate-950/60 border border-slate-800 px-4 py-2.5 rounded-2xl">
           <div>
-            <span className="text-[10px] text-slate-400 block">Total Displaced Families</span>
-            <span className="text-lg font-bold text-purple-400 font-heading">1,650 Families</span>
+            <span className="text-[10px] text-slate-400 block">{t('Total Displaced Families')}</span>
+            <span className="text-lg font-bold text-purple-400 font-heading">1,650 {t('Families')}</span>
           </div>
         </div>
       </div>
@@ -86,11 +86,11 @@ export const RehabilitationResettlement = () => {
       {activeRole?.id === 'rr_officer' && activeProject?.current_stage_id === 3 && (
         <div className="bg-purple-950/40 border border-purple-500/30 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="text-purple-300 text-xs">
-            <strong className="block font-bold">Stage 3: R&R Scheme Preparation Active</strong>Once all families have been accounted for and the R&R scheme is prepared, mark this stage as complete to forward it to the State Government.</div>
+            <strong className="block font-bold">{t('Stage 3: R&R Scheme Preparation Active')}</strong>{t('Once all families have been accounted for and the R&R scheme is prepared, mark this stage as complete to forward it to the State Government.')}</div>
           <button 
             onClick={handleCompleteStage}
             className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-slate-950 font-bold text-xs rounded-xl transition shadow-lg shrink-0"
-          >Mark Stage 3 as Completed</button>
+          >{t('Mark Stage 3 as Completed')}</button>
         </div>
       )}
 
@@ -98,76 +98,76 @@ export const RehabilitationResettlement = () => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
         <div className="p-5 bg-slate-900/90 border border-slate-800 rounded-2xl space-y-2">
           <div className="flex items-center justify-between text-slate-400">
-            <span>Resettlement Colony Housing Allotments</span>
+            <span>{t('Resettlement Colony Housing Allotments')}</span>
             <Building className="w-4 h-4 text-emerald-400" />
           </div>
-          <div className="text-xl font-bold text-white font-heading">1,240 Plots Allotted</div>
-          <p className="text-[11px] text-emerald-400">92% Construction Underway</p>
+          <div className="text-xl font-bold text-white font-heading">1,240 {t('Plots Allotted')}</div>
+          <p className="text-[11px] text-emerald-400">{t('92% Construction Underway')}</p>
         </div>
 
         <div className="p-5 bg-slate-900/90 border border-slate-800 rounded-2xl space-y-2">
           <div className="flex items-center justify-between text-slate-400">
-            <span>One-Time Resettlement Allowance</span>
+            <span>{t('One-Time Resettlement Allowance')}</span>
             <Award className="w-4 h-4 text-cyan-400" />
           </div>
-          <div className="text-xl font-bold text-white font-heading">₹ 5,00,000 / Family</div>
-          <p className="text-[11px] text-cyan-400">Cash in lieu of employment option</p>
+          <div className="text-xl font-bold text-white font-heading">₹ 5,00,000 / {t('Family')}</div>
+          <p className="text-[11px] text-cyan-400">{t('Cash in lieu of employment option')}</p>
         </div>
 
         <div className="p-5 bg-slate-900/90 border border-slate-800 rounded-2xl space-y-2">
           <div className="flex items-center justify-between text-slate-400">
-            <span>Skill Development & Vocational Training</span>
+            <span>{t('Skill Development & Vocational Training')}</span>
             <Briefcase className="w-4 h-4 text-amber-400" />
           </div>
-          <div className="text-xl font-bold text-white font-heading">880 Youth Enrolled</div>
-          <p className="text-[11px] text-amber-400">PMKVY Skill Certification Linkage</p>
+          <div className="text-xl font-bold text-white font-heading">880 {t('Youth Enrolled')}</div>
+          <p className="text-[11px] text-amber-400">{t('PMKVY Skill Certification Linkage')}</p>
         </div>
       </div>
 
       {/* Family R&R Records Table */}
       <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-4">
-        <h2 className="text-base font-bold text-white font-heading">Affected & Displaced Family R&R Master Roster</h2>
+        <h2 className="text-base font-bold text-white font-heading">{t('Affected & Displaced Family R&R Master Roster')}</h2>
 
         <div className="overflow-x-auto rounded-xl border border-slate-800">
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-800/80 text-slate-300 font-semibold uppercase tracking-wider">
               <tr>
-                <th className="py-3.5 px-4 border-b border-slate-700">Family Head Name</th>
-                <th className="py-3.5 px-4 border-b border-slate-700">Social Category</th>
-                <th className="py-3.5 px-4 border-b border-slate-700">Family Size</th>
-                <th className="py-3.5 px-4 border-b border-slate-700">Housing Site Allotment</th>
-                <th className="py-3.5 px-4 border-b border-slate-700">Employment / Allowance</th>
-                <th className="py-3.5 px-4 border-b border-slate-700">Package Value</th>
-                <th className="py-3.5 px-4 border-b border-slate-700 text-center">R&R Status</th>
+                <th className="py-3.5 px-4 border-b border-slate-700">{t('Family Head Name')}</th>
+                <th className="py-3.5 px-4 border-b border-slate-700">{t('Social Category')}</th>
+                <th className="py-3.5 px-4 border-b border-slate-700">{t('Family Size')}</th>
+                <th className="py-3.5 px-4 border-b border-slate-700">{t('Housing Site Allotment')}</th>
+                <th className="py-3.5 px-4 border-b border-slate-700">{t('Employment / Allowance')}</th>
+                <th className="py-3.5 px-4 border-b border-slate-700">{t('Package Value')}</th>
+                <th className="py-3.5 px-4 border-b border-slate-700 text-center">{t('R&R Status')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 text-slate-300">
               {rrList.map((rr) => (
                 <tr key={rr.id} className="hover:bg-slate-800/40 transition">
                   <td className="py-3.5 px-4 font-semibold text-white">
-                    {rr.family_head_name}
-                    <span className="text-[10px] text-slate-400 block font-normal">Survey: {rr.survey_number} ({rr.village})</span>
+                    {t(rr.family_head_name)}
+                    <span className="text-[10px] text-slate-400 block font-normal">{t('Survey No')}: {rr.survey_number} ({t(rr.village)})</span>
                   </td>
                   <td className="py-3.5 px-4">
                     <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono text-[10px]">
-                      {rr.category}
+                      {t(rr.category)}
                     </span>
                   </td>
                   <td className="py-3.5 px-4 text-slate-300">
-                    {rr.family_members_count} Members
+                    {rr.family_members_count} {t('Members')}
                   </td>
                   <td className="py-3.5 px-4 text-emerald-300 font-medium">
-                    {rr.housing_allotted}
+                    {t(rr.housing_allotted)}
                   </td>
                   <td className="py-3.5 px-4 text-slate-300">
-                    {rr.employment_status}
+                    {t(rr.employment_status)}
                   </td>
                   <td className="py-3.5 px-4 font-mono font-bold text-cyan-400">
-                    ₹ {(rr.r_and_r_package_value_rs / 100000).toFixed(2)} Lakhs
+                    ₹ {(rr.r_and_r_package_value_rs / 100000).toFixed(2)} {t('Lakhs')}
                   </td>
                   <td className="py-3.5 px-4 text-center">
                     <span className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 inline-block shadow-sm">
-                      {rr.status}
+                      {t(rr.status)}
                     </span>
                   </td>
                 </tr>

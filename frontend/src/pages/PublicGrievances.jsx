@@ -42,7 +42,7 @@ export const PublicGrievances = () => {
 
   if (activeRole.id !== 'collector') {
     return (
-      <div className="p-8 text-center text-slate-400">You do not have permission to view Public Grievances.</div>
+      <div className="p-8 text-center text-slate-400">{t('You do not have permission to view Public Grievances.')}</div>
     );
   }
 
@@ -52,10 +52,10 @@ export const PublicGrievances = () => {
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-xl font-bold text-white flex items-center gap-3">
             <MessageSquare className="w-6 h-6 text-amber-400" />
-            <span>Public Grievances & Petitions</span>
+            <span>{t('Public Grievances & Petitions')}</span>
           </h2>
           <span className="text-sm px-3 py-1.5 bg-amber-500/20 text-amber-400 rounded-lg font-bold">
-            {grievances.filter(g => g.status === 'Pending').length} Pending Petitions
+            {grievances.filter(g => g.status === 'Pending').length} {t('Pending Petitions')}
           </span>
         </div>
 
@@ -63,7 +63,7 @@ export const PublicGrievances = () => {
           <div className="space-y-4 animate-pulse">
             <div className="h-32 bg-slate-800 rounded-2xl w-full"></div>
             <div className="h-32 bg-slate-800 rounded-2xl w-full"></div>
-          </div>) : grievances.length === 0 ? (<div className="p-12 text-center text-slate-400 bg-slate-950/50 rounded-2xl border border-slate-800/60">No public grievances found.</div>
+          </div>) : grievances.length === 0 ? (<div className="p-12 text-center text-slate-400 bg-slate-950/50 rounded-2xl border border-slate-800/60">{t('No public grievances found.')}</div>
         ) : (
           <div className="space-y-4">
             {grievances.map(g => (
@@ -77,21 +77,21 @@ export const PublicGrievances = () => {
                         : (g.status === 'Pending' && Math.floor((new Date() - new Date(g.created_at)) / (1000 * 60 * 60 * 24)) > 30) ? 'bg-rose-600/30 text-rose-300 border border-rose-500'
                         : 'bg-rose-500/20 text-rose-400'
                       }`}>
-                      {(g.status === 'Pending' && Math.floor((new Date() - new Date(g.created_at)) / (1000 * 60 * 60 * 24)) > 30) ? 'Escalated to Collector (Over 30 Days)' : g.status}
+                      {(g.status === 'Pending' && Math.floor((new Date() - new Date(g.created_at)) / (1000 * 60 * 60 * 24)) > 30) ? t('Escalated to Collector (Over 30 Days)') : t(g.status)}
                     </span>
                     <span className="text-xs text-slate-500 font-medium flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5" /> {new Date(g.created_at).toLocaleString()}
                     </span>
                   </div>
-                  <div className="text-base font-semibold text-white">{g.owner_name} <span className="text-sm font-normal text-slate-400">({g.owner_email})</span></div>
-                  <div className="text-sm text-slate-400 font-mono">Parcel ULPIN:<span className="text-slate-300 font-bold">{g.ulpin}</span></div>
+                  <div className="text-base font-semibold text-white">{t(g.owner_name)} <span className="text-sm font-normal text-slate-400">({g.owner_email})</span></div>
+                  <div className="text-sm text-slate-400 font-mono">{t('Parcel ULPIN:')} <span className="text-slate-300 font-bold">{g.ulpin}</span></div>
                   <div className="text-sm text-slate-300 leading-relaxed bg-slate-900/50 p-4 rounded-xl border border-slate-800/60 shadow-inner">
-                    "{g.description}"
+                    "{t(g.description)}"
                   </div>
                   
                   {g.remarks && (
                     <div className="mt-4 p-4 bg-indigo-950/20 border-l-4 border-indigo-500 text-sm text-indigo-300 rounded-r-xl">
-                      <strong className="text-indigo-400">Official Reply / Resolution Remarks:</strong> <br/>{g.remarks}
+                      <strong className="text-indigo-400">{t('Official Reply / Resolution Remarks:')}</strong> <br/>{t(g.remarks)}
                     </div>
                   )}
                 </div>
@@ -99,10 +99,10 @@ export const PublicGrievances = () => {
                 {g.status === 'Pending' && (
                   <div className="w-full xl:w-96 bg-slate-900 p-5 rounded-2xl border border-slate-800 shrink-0 space-y-4 shadow-xl">
                     <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                      <Scale className="w-4 h-4 text-emerald-400" />Execute Resolution</h4>
+                      <Scale className="w-4 h-4 text-emerald-400" />{t('Execute Resolution')}</h4>
                     <textarea 
                       rows={4}
-                      placeholder="Enter legal resolution remarks or instructions..."
+                      placeholder={t('Enter legal resolution remarks or instructions...')}
                       className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-500 transition"
                       value={resolvingId === g.id ? resolveRemarks : ''}
                       onChange={(e) => {
@@ -114,7 +114,7 @@ export const PublicGrievances = () => {
                       onClick={handleResolveGrievance}
                       disabled={resolvingId !== g.id || !resolveRemarks}
                       className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition shadow-lg shadow-indigo-900/40"
-                    >Submit Official Reply</button>
+                    >{t('Submit Official Reply')}</button>
                   </div>
                 )}
               </div>

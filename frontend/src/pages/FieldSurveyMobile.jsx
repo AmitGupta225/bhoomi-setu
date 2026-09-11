@@ -151,11 +151,11 @@ export const FieldSurveyMobile = () => {
   const [newProjId, setNewProjId] = useState(selectedProjectId || '');
   const [newSurveyNo, setNewSurveyNo] = useState('204/3A');
   const [newKhataNo, setNewKhataNo] = useState('KH-5510');
-  const [newVillage, setNewVillage] = useState('Manor Farm Zone');
-  const [newLandType, setNewLandType] = useState('Irrigated Agricultural Farm');
-  const [newOwnerName, setNewOwnerName] = useState('Anil Kumar Patil');
+  const [newVillage, setNewVillage] = useState(() => t('Manor Farm Zone'));
+  const [newLandType, setNewLandType] = useState(() => t('Irrigated Agricultural Farm'));
+  const [newOwnerName, setNewOwnerName] = useState(() => t('Anil Kumar Patil'));
   const [newOwnerContact, setNewOwnerContact] = useState('+91 98221 44500');
-  const [newAddress, setNewAddress] = useState('Plot No. 47, GT Road');
+  const [newAddress, setNewAddress] = useState(() => t('Plot No. 47, GT Road'));
   const [customLat, setCustomLat] = useState('19.7285');
   const [customLng, setCustomLng] = useState('72.8455');
   const [manualAreaHa, setManualAreaHa] = useState(null);
@@ -534,18 +534,18 @@ const handleCreateMultiVertexParcel = async (e) => {
   }, [vertices]);
 
   return (
-    <div className="p-4 lg:p-8 space-y-8 max-w-[1400px] mx-auto">
+    <div className="px-2 sm:px-4 py-3 space-y-4 w-full">
       {/* Top Banner */}
-      <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="bg-slate-900 border border-slate-800 px-4 py-3.5 rounded-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-cyan-400">
             <Smartphone className="w-4 h-4" />
-            <span>Mobile-Responsive Field Parcel Boundary Mapper</span>
+            <span>{t('Mobile-Responsive Field Parcel Boundary Mapper')}</span>
           </div>
           <h1 className="text-2xl font-extrabold font-heading text-white mt-1">
             {t('Multi-Vertex Land Boundary Creator')}
           </h1>
-          <p className="text-xs text-slate-400">Plot non-square parcel boundaries, capture live vertex GPS points, and render closed GIS polygons</p>
+          <p className="text-xs text-slate-400">{t('Plot non-square parcel boundaries, capture live vertex GPS points, and render closed GIS polygons')}</p>
         </div>
         
         {activeRole?.id === 'surveyor' && canSurvey && (
@@ -576,8 +576,8 @@ const handleCreateMultiVertexParcel = async (e) => {
         <div className="p-4 bg-amber-950/40 border border-amber-500/30 rounded-2xl text-xs text-amber-300 flex items-center gap-3">
           <Lock className="w-5 h-5 text-amber-400 shrink-0" />
           <div>
-            <strong className="block font-bold">ReadOnly Access Mode ({activeRole.label})</strong>
-            <span>Submitting ground survey reports requires Field Surveyor persona. Switch active persona from the header dropdown to upload reports.</span>
+            <strong className="block font-bold">{t('ReadOnly Access Mode')} ({t(activeRole.label)})</strong>
+            <span>{t('Submitting ground survey reports requires Field Surveyor persona. Switch active persona from the header dropdown to upload reports.')}</span>
           </div>
         </div>
       )}
@@ -585,18 +585,18 @@ const handleCreateMultiVertexParcel = async (e) => {
       {submitSuccess && (
         <div className="p-4 bg-emerald-950/90 border border-emerald-500/60 rounded-2xl text-xs font-semibold text-emerald-300 flex items-center gap-2 animate-in fade-in">
           <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-          <span>{submitSuccess}</span>
+          <span>{t(submitSuccess)}</span>
         </div>
       )}
 
       {/* DEDICATED MULTI-VERTEX BOUNDARY PARCEL CREATOR */}
       
       {/* Interactive Live Map Displaying Multi-Vertex Polygon */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 lg:p-6 mb-6 shadow-2xl flex flex-col relative w-full overflow-hidden">
+        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-2 sm:p-3 mb-3 shadow-2xl flex flex-col relative w-full overflow-hidden">
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-bold text-white font-heading">Map</h2>
-              <span className="text-xs text-slate-400 font-mono">Vertices Connected: {vertices.length}</span>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-base font-bold text-white font-heading">{t('Map')}</h2>
+              <span className="text-xs text-slate-400 font-mono">{t('Vertices Connected:')} {vertices.length}</span>
             </div>
 
             {/* Location Search Bar */}
@@ -608,11 +608,11 @@ const handleCreateMultiVertexParcel = async (e) => {
                   value={locationQuery}
                   onChange={(e) => handleLocationInput(e.target.value)}
                   onFocus={() => locationSuggestions.length > 0 && setShowSuggestions(true)}
-                  placeholder="Search location to navigate map (e.g. Palghar, Maharashtra)..."
+                  placeholder={t('Search location to navigate map (e.g. Palghar, Maharashtra)...')}
                   className="w-full pl-9 pr-10 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition"
                 />
                 {isSearching && (
-                  <span className="absolute right-3 text-[10px] text-cyan-400 animate-pulse">Searching...</span>
+                  <span className="absolute right-3 text-[10px] text-cyan-400 animate-pulse">{t('Searching...')}</span>
                 )}
                 {locationQuery && !isSearching && (
                   <button
@@ -651,7 +651,7 @@ const handleCreateMultiVertexParcel = async (e) => {
                   }`}
                 >
                   <Globe className="w-3.5 h-3.5" />
-                  <span>Standard Map</span>
+                  <span>{t('Standard Map')}</span>
                 </button>
 
                 <button
@@ -662,7 +662,7 @@ const handleCreateMultiVertexParcel = async (e) => {
                   }`}
                 >
                   <Layers className="w-3.5 h-3.5" />
-                  <span>Satellite</span>
+                  <span>{t('Satellite')}</span>
                 </button>
               </div>
 
@@ -702,9 +702,9 @@ const handleCreateMultiVertexParcel = async (e) => {
                   <Marker key={idx} position={[v.lat, v.lng]}>
                     <Popup>
                       <div className="text-xs font-mono">
-                        <strong className="text-cyan-700 block font-sans">Vertex V{idx + 1}</strong>
-                        Lat: {v.lat}<br />
-                        Lng: {v.lng}
+                        <strong className="text-cyan-700 block font-sans">{t('Vertex')} V{idx + 1}</strong>
+                        {t('Lat:')} {v.lat}<br />
+                        {t('Lng:')} {v.lng}
                       </div>
                     </Popup>
                   </Marker>
@@ -763,16 +763,16 @@ const handleCreateMultiVertexParcel = async (e) => {
                     <Popup>
                       <div className="text-xs space-y-1 font-mono">
                         <strong className="block text-rose-600 font-sans font-bold">
-                          📍 {userLocation.accuracy ? (userLocation.accuracy > 2000 ? 'Regional IP Gateway' : 'GPS Location') : 'Selected Custom Point'}
+                          📍 {userLocation.accuracy ? (userLocation.accuracy > 2000 ? t('Regional IP Gateway') : t('GPS Location')) : t('Selected Custom Point')}
                         </strong>
                         {userLocation.accuracy && (
                           <div className="text-[10px] text-amber-600 font-sans font-semibold">
-                            Accuracy: ±{userLocation.accuracy > 1000 ? `${(userLocation.accuracy / 1000).toFixed(1)} km` : `${userLocation.accuracy}m`}
+                            {t('Accuracy:')} ±{userLocation.accuracy > 1000 ? `${(userLocation.accuracy / 1000).toFixed(1)} ${t('km')}` : `${userLocation.accuracy} ${t('m')}`}
                           </div>
                         )}
-                        <div>Lat: {userLocation.lat}</div>
-                        <div>Lng: {userLocation.lng}</div>
-                        <div className="text-[10px] text-slate-500 font-sans italic pt-1 border-t border-slate-200">💡 Drag pin anywhere on map to micro-adjust</div>
+                        <div>{t('Lat:')} {userLocation.lat}</div>
+                        <div>{t('Lng:')} {userLocation.lng}</div>
+                        <div className="text-[10px] text-slate-500 font-sans italic pt-1 border-t border-slate-200">💡 {t('Drag pin anywhere on map to micro-adjust')}</div>
                       </div>
                     </Popup>
                   </Marker>
@@ -781,7 +781,7 @@ const handleCreateMultiVertexParcel = async (e) => {
             </div>
           </div>
 
-          <p className="text-xs text-slate-400 italic text-center pt-2 mb-4">💡 As you add or remove vertex coordinates below, the green polygon boundary updates live on the map above.</p>
+          <p className="text-xs text-slate-400 italic text-center pt-2 mb-4">💡 {t('As you add or remove vertex coordinates below, the green polygon boundary updates live on the map above.')}</p>
 
         {/* INJECTED VERTEX CONTROLS */}
         {/* VERTEX CONTROL SECTION */}
@@ -789,7 +789,7 @@ const handleCreateMultiVertexParcel = async (e) => {
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-slate-300 flex items-center gap-1.5">
                   <Compass className="w-4 h-4 text-cyan-400" />
-                  <span>Boundary Vertices ({vertices.length} Points)</span>
+                  <span>{t('Boundary Vertices')} ({vertices.length} {t('Points')})</span>
                 </span>
 
                 <button
@@ -799,7 +799,7 @@ const handleCreateMultiVertexParcel = async (e) => {
                   title="Add your physical device location"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Device GPS</span>
+                  <span>{t('Device GPS')}</span>
                 </button>
               </div>
 
@@ -829,7 +829,7 @@ const handleCreateMultiVertexParcel = async (e) => {
                     title="Add Red Pin Location to Polygon"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>Add Red Pin to Boundary</span>
+                    <span>{t('Add Red Pin to Boundary')}</span>
                   </button>
                 </div>
               </div>
@@ -842,7 +842,7 @@ const handleCreateMultiVertexParcel = async (e) => {
                       <span className="px-1.5 py-0.5 bg-cyan-950 border border-cyan-500/30 text-cyan-300 text-[10px] rounded font-bold">
                         V{idx + 1}
                       </span>
-                      <span className="text-slate-300">Lat: {v.lat}, Lng: {v.lng}</span>
+                      <span className="text-slate-300">{t('Lat:')} {v.lat}, {t('Lng:')} {v.lng}</span>
                     </div>
                     <button
                       type="button"
@@ -858,8 +858,8 @@ const handleCreateMultiVertexParcel = async (e) => {
               {/* Live Area Calculation Box */}
               <div className="p-3 bg-emerald-950/40 border border-emerald-500/30 rounded-xl flex flex-col gap-2 text-xs">
                 <div className="flex justify-between items-center">
-                  <span className="text-emerald-300 font-medium">Calculated Polygon Area (Ha):</span>
-                  <span className="text-slate-400 font-sans text-[10px]">({calculatedSqM} m²)</span>
+                  <span className="text-emerald-300 font-medium">{t('Calculated Polygon Area (Ha):')}</span>
+                  <span className="text-slate-400 font-sans text-[10px]">({calculatedSqM} {t('m²')})</span>
                 </div>
                 <input
                   type="number"
@@ -867,7 +867,7 @@ const handleCreateMultiVertexParcel = async (e) => {
                   value={displayAreaHa}
                   onChange={(e) =>setManualAreaHa(e.target.value)}
                   className="w-full p-2 bg-emerald-900/50 border border-emerald-500/50 rounded-lg text-white font-mono font-bold focus:outline-none focus:border-emerald-400"
-                  placeholder="Auto-calculated (edit to override)"
+                  placeholder={t('Auto-calculated (edit to override)')}
                 /></div>
             </div>
 
@@ -875,16 +875,16 @@ const handleCreateMultiVertexParcel = async (e) => {
             
         </div>
 
-      <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6">
+      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4">
         {/* Form & Vertex Controls */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           <h2 className="text-base font-bold text-white font-heading flex items-center gap-2">
             <Layers className="w-4 h-4 text-cyan-400" />
             <span>{t('Map Custom Multi-Vertex Land Boundary')}</span>
           </h2>
 
           <form onSubmit={handleCreateMultiVertexParcel} className="space-y-4 text-xs">
-<div className="space-y-6 max-w-2xl mx-auto">
+            <div className="space-y-4 w-full">
             <div className="mb-4 bg-slate-800/50 border border-slate-700/50 p-4 rounded-2xl">
               <label className="text-cyan-400 font-bold mb-2 block text-sm">{t('Target Parcel for Inspection:')}</label>
               <select
@@ -892,7 +892,7 @@ const handleCreateMultiVertexParcel = async (e) => {
                 onChange={(e) => handleSelectExistingParcel(e.target.value)}
                 className="w-full p-3 bg-slate-950 border border-slate-700 rounded-xl text-white font-semibold"
               >
-                <option value="">-- Create New Multi-Vertex Parcel --</option>
+                <option value="">-- {t('Create New Multi-Vertex Parcel')} --</option>
                 {parcels.filter(p => !selectedProjectId || p.project_id === selectedProjectId).map(p => (
                   <option key={p.id} value={p.id}>{p.ulpin} - {p.owner_name} ({p.village})</option>
                 ))}
@@ -902,7 +902,7 @@ const handleCreateMultiVertexParcel = async (e) => {
             {/* Simulated Bhu-Naksha ULPIN Verification */}
             <div className="bg-slate-950 p-3 rounded-xl border border-slate-700/60 mb-4">
               <label className="text-emerald-400 font-bold mb-1.5 block flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5" />Auto-Fetch DILRMP Land Records (ULPIN)</label>
+                <Lock className="w-3.5 h-3.5" />{t('Auto-Fetch DILRMP Land Records (ULPIN)')}</label>
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -916,14 +916,14 @@ const handleCreateMultiVertexParcel = async (e) => {
                   disabled={isVerifyingUlpin}
                   className="px-3 py-2 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-lg font-bold text-xs transition"
                 >
-                  {isVerifyingUlpin ? 'Verifying...' : 'Verify'}
+                  {isVerifyingUlpin ? t('Verifying...') : t('Verify')}
                 </button>
               </div>
             </div>
 
             <div className="h-px bg-slate-800 my-8"></div>
 <div className="space-y-4">
-<h3 className="text-sm font-bold text-slate-300 border-b border-slate-700 pb-2 mb-4">Land & Owner Details</h3>
+<h3 className="text-sm font-bold text-slate-300 border-b border-slate-700 pb-2 mb-4">{t('Land & Owner Details')}</h3>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-slate-400 mb-1 block">{t('Survey Number:')}</label>
@@ -958,12 +958,12 @@ const handleCreateMultiVertexParcel = async (e) => {
                   value={newLandType}
                   onChange={(e) =>setNewLandType(e.target.value)}
                   className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"
-                ><option value="Suburban Residential House">Suburban Residential House</option>
-                  <option value="Roadside Commercial Shop">Roadside Commercial Shop</option>
-                  <option value="Irrigated Agricultural Farm">Irrigated Agricultural Farm</option>
-                  <option value="Fruit Orchard Estate">Fruit Orchard Estate</option>
-                  <option value="Industrial Logistics Park">Industrial Logistics Park</option>
-                  <option value="Solar Photovoltaic Grid Zone">Solar Photovoltaic Grid Zone</option>
+                ><option value="Suburban Residential House">{t('Suburban Residential House')}</option>
+                  <option value="Roadside Commercial Shop">{t('Roadside Commercial Shop')}</option>
+                  <option value="Irrigated Agricultural Farm">{t('Irrigated Agricultural Farm')}</option>
+                  <option value="Fruit Orchard Estate">{t('Fruit Orchard Estate')}</option>
+                  <option value="Industrial Logistics Park">{t('Industrial Logistics Park')}</option>
+                  <option value="Solar Photovoltaic Grid Zone">{t('Solar Photovoltaic Grid Zone')}</option>
                 </select>
               </div>
             </div>
@@ -993,7 +993,7 @@ const handleCreateMultiVertexParcel = async (e) => {
                 value={newAddress}
                 onChange={(e) => setNewAddress(e.target.value)}
                 rows={2}
-                placeholder="Enter complete address, landmarks, street name, etc."
+                placeholder={t('Enter complete address, landmarks, street name, etc.')}
                 className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white resize-none"
               />
             </div>
@@ -1001,52 +1001,52 @@ const handleCreateMultiVertexParcel = async (e) => {
             {/* INJECTED LARR SECTION */}
             <div className="mt-6 pt-6 border-t border-slate-700">
               <h2 className="text-base font-bold text-emerald-400 font-heading flex items-center gap-2 mb-4">
-                LARR 2013 Field Inspection Details
+                {t('LARR 2013 Field Inspection Details')}
               </h2>
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div>
-                  <label className="text-slate-400 mb-1 block">Affected Families</label>
+                  <label className="text-slate-400 mb-1 block">{t('Affected Families')}</label>
                   <input type="number" value={inspFamilies} onChange={e => setInspFamilies(parseInt(e.target.value) || 0)} className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white" />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-slate-400 mb-1 block">Social Cat.</label>
+                    <label className="text-slate-400 mb-1 block">{t('Social Cat.')}</label>
                     <select value={inspFamilyCategory} onChange={e => setInspFamilyCategory(e.target.value)} className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs">
-                      <option value="General">General</option>
-                      <option value="OBC">OBC</option>
-                      <option value="SC">SC</option>
-                      <option value="ST">ST</option>
+                      <option value="General">{t('General')}</option>
+                      <option value="OBC">{t('OBC')}</option>
+                      <option value="SC">{t('SC')}</option>
+                      <option value="ST">{t('ST')}</option>
                     </select>
                   </div>
                   <div>
-                    <label className="text-slate-400 mb-1 block">Size</label>
+                    <label className="text-slate-400 mb-1 block">{t('Size')}</label>
                     <input type="number" value={inspFamilyMembers} onChange={e => setInspFamilyMembers(parseInt(e.target.value) || 0)} className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white" />
                   </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div>
-                  <label className="text-slate-400 mb-1 block">Structures (Houses)</label>
+                  <label className="text-slate-400 mb-1 block">{t('Structures (Houses)')}</label>
                   <input type="number" value={inspStructures} onChange={e => setInspStructures(parseInt(e.target.value) || 0)} className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white" />
                 </div>
                 <div>
-                  <label className="text-slate-400 mb-1 block">Trees (Valuable)</label>
+                  <label className="text-slate-400 mb-1 block">{t('Trees (Valuable)')}</label>
                   <input type="number" value={inspTrees} onChange={e => setInspTrees(parseInt(e.target.value) || 0)} className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white" />
                 </div>
               </div>
               <div className="flex gap-4 mb-4 text-xs">
                 <label className="flex items-center gap-2 text-slate-300">
                   <input type="checkbox" checked={inspTribal} onChange={e => setInspTribal(e.target.checked)} className="w-4 h-4 accent-emerald-500" />
-                  Tribal Land (FRA 2006)
+                  {t('Tribal Land (FRA 2006)')}
                 </label>
                 <label className="flex items-center gap-2 text-slate-300">
                   <input type="checkbox" checked={inspConsent} onChange={e => setInspConsent(e.target.checked)} className="w-4 h-4 accent-emerald-500" />
-                  Owner Consent
+                  {t('Owner Consent')}
                 </label>
               </div>
               <div className="mb-4">
-                <label className="text-slate-400 mb-1 block">Inspection Notes</label>
-                <textarea rows={2} value={inspNotes} onChange={e => setInspNotes(e.target.value)} className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white resize-none" placeholder="Add LARR specific field observations..."></textarea>
+                <label className="text-slate-400 mb-1 block">{t('Inspection Notes')}</label>
+                <textarea rows={2} value={inspNotes} onChange={e => setInspNotes(e.target.value)} className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white resize-none" placeholder={t('Add LARR specific field observations...')}></textarea>
               </div>
             </div>
             {/* END INJECTED LARR SECTION */}
@@ -1062,7 +1062,7 @@ const handleCreateMultiVertexParcel = async (e) => {
               className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-bold rounded-xl text-xs transition shadow-lg shadow-cyan-950/50 flex items-center justify-center gap-2"
             >
               {!canSurvey ? <Lock className="w-4 h-4" /> : <FileCheck className="w-4 h-4" />}
-              <span>Save Parcel & LARR Inspection Report</span>
+              <span>{t('Save Parcel & LARR Inspection Report')}</span>
             </button>
           </form>
 

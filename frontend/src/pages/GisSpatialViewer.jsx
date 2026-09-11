@@ -304,13 +304,13 @@ export const GisSpatialViewer = () => {
   return (
     <div className="h-[calc(100vh-130px)] flex flex-col lg:flex-row overflow-hidden relative">
       {/* Sidebar Controls & Parcel Details Panel */}
-      <div className="w-full lg:w-96 bg-slate-900 border-r border-slate-800 flex flex-col z-20 shrink-0 shadow-2xl">
+      <div className="w-full lg:w-80 bg-slate-900 border-r border-slate-800 flex flex-col z-20 shrink-0 shadow-2xl">
         {/* Header Search */}
-        <div className="p-4 border-b border-slate-800 space-y-3">
+        <div className="p-3 border-b border-slate-800 space-y-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
               <Compass className="w-4 h-4" />
-              <span>GIS Spatial Hub</span>
+              <span>{t('GIS Spatial Hub')}</span>
             </div>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">OSM WGS84</span>
           </div>
@@ -319,7 +319,7 @@ export const GisSpatialViewer = () => {
           <form onSubmit={handleUlpinSearch} className="relative">
             <input
               type="text"
-              placeholder="Enter ULPIN (e.g. IN-MH-PAL-2026-00101)..."
+              placeholder={t('Enter ULPIN (e.g. IN-MH-PAL-2026-00101)...')}
               value={searchUlpin}
               onChange={(e) => setSearchUlpin(e.target.value)}
               className="w-full pl-9 pr-4 py-2 bg-slate-800/80 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition"
@@ -341,10 +341,10 @@ export const GisSpatialViewer = () => {
               }}
               className="w-full bg-slate-800 border border-emerald-500/40 rounded-lg text-xs text-emerald-300 font-medium px-2.5 py-1.5 focus:outline-none"
             >
-              <option value="">Jump to Land Parcel...</option>
+              <option value="">{t('Jump to Land Parcel...')}</option>
               {filteredParcels.map(p => (
                 <option key={p.id} value={p.id}>
-                  {p.ulpin} (Survey: {p.survey_number} • {p.area_ha} Ha - {p.land_type})
+                  {p.ulpin} ({t('Survey:')} {p.survey_number} • {p.area_ha} {t('Ha')} - {t(p.land_type)})
                 </option>
               ))}
             </select>
@@ -352,10 +352,10 @@ export const GisSpatialViewer = () => {
         </div>
 
         {/* Selected Parcel Deep Details & Boundary Lat/Lng Box */}
-        <div className="flex-1 p-4 overflow-y-auto space-y-4">
+        <div className="flex-1 p-3 overflow-y-auto space-y-3">
           {selectedParcel ? (
-            <div className="space-y-4">
-              <div className="p-4 bg-slate-800/60 border border-slate-700 rounded-2xl space-y-2">
+            <div className="space-y-3">
+              <div className="p-3 bg-slate-800/60 border border-slate-700 rounded-xl space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
                     {selectedParcel.ulpin}
@@ -364,36 +364,36 @@ export const GisSpatialViewer = () => {
                     className="text-[10px] font-bold px-2 py-0.5 rounded text-slate-950 uppercase"
                     style={{ backgroundColor: getStatusColor(selectedParcel.status) }}
                   >
-                    {selectedParcel.status}
+                    {t(selectedParcel.status)}
                   </span>
                 </div>
                 
                 <h3 className="text-sm font-bold text-white font-heading">
-                  Survey No. {selectedParcel.survey_number} (Khata: {selectedParcel.khata_number})
+                  {t('Survey No.')} {selectedParcel.survey_number} ({t('Khata:')} {selectedParcel.khata_number})
                 </h3>
                 <p className="text-xs text-slate-300">
-                  {selectedParcel.village}, {selectedParcel.tehsil}, {selectedParcel.district}, {selectedParcel.state}
+                  {t(selectedParcel.village)}, {t(selectedParcel.tehsil)}, {t(selectedParcel.district)}, {t(selectedParcel.state)}
                 </p>
               </div>
 
               {/* Attributes Table */}
               <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-4 space-y-2.5 text-xs">
                 <div className="flex justify-between py-1 border-b border-slate-800">
-                  <span className="text-slate-400">Owner Name:</span>
-                  <span className="font-semibold text-white">{selectedParcel.owner_name}</span>
+                  <span className="text-slate-400">{t('Owner Name:')}</span>
+                  <span className="font-semibold text-white">{t(selectedParcel.owner_name)}</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-800">
-                  <span className="text-slate-400">Land Category:</span>
-                  <span className="font-medium text-emerald-400">{selectedParcel.land_type}</span>
+                  <span className="text-slate-400">{t('Land Category:')}</span>
+                  <span className="font-medium text-emerald-400">{t(selectedParcel.land_type)}</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-800">
-                  <span className="text-slate-400">Total Plot Area:</span>
+                  <span className="text-slate-400">{t('Total Plot Area:')}</span>
                   <span className="font-bold text-white">
-                    {selectedParcel.area_ha} Hectares <span className="text-slate-400 font-normal">({(selectedParcel.area_ha * 10000).toLocaleString()} m²)</span>
+                    {selectedParcel.area_ha} {t('Hectares')} <span className="text-slate-400 font-normal">({(selectedParcel.area_ha * 10000).toLocaleString()} {t('m²')})</span>
                   </span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-800">
-                  <span className="text-slate-400">Centroid GPS:</span>
+                  <span className="text-slate-400">{t('Centroid GPS:')}</span>
                   <span className="font-mono text-emerald-400 font-semibold">{selectedParcel.lat}, {selectedParcel.lng}</span>
                 </div>
               </div>
@@ -402,7 +402,7 @@ export const GisSpatialViewer = () => {
               {activeRole && !selectedParcel.id.startsWith('PROJ-') && (
                 <div className="bg-slate-950/80 border border-slate-700 rounded-2xl p-4 space-y-3">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block flex items-center gap-1.5">
-                    <Crosshair className="w-3.5 h-3.5 text-emerald-400" />Update Parcel Status</span>
+                    <Crosshair className="w-3.5 h-3.5 text-emerald-400" />{t('Update Parcel Status')}</span>
                   <div className="flex flex-wrap gap-2">
                     {['Proposed', 'Notified', 'Verified', 'Awarded', 'Possessed', 'Disputed'].map(status => (
                       <button
@@ -419,7 +419,7 @@ export const GisSpatialViewer = () => {
                           color: selectedParcel.status === status ? '#000' : getStatusColor(status)
                         }}
                       >
-                        {status}
+                        {t(status)}
                       </button>
                     ))}
                   </div>
@@ -431,15 +431,15 @@ export const GisSpatialViewer = () => {
                 <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-4 space-y-3">
                   <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
                     <Clock className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>Compliance Audit Trail</span>
+                    <span>{t('Compliance Audit Trail')}</span>
                   </h3>
                   <div className="space-y-3 pl-2 border-l-2 border-slate-800">
                     {parcelLogs.map(log => (
                       <div key={log.id} className="relative pl-4 space-y-1">
                         <div className="absolute w-2 h-2 rounded-full bg-cyan-500 -left-[5px] top-1.5 ring-4 ring-slate-900"></div>
                         <div className="text-[10px] text-slate-400 font-mono">{new Date(log.timestamp).toLocaleString()}</div>
-                        <div className="text-xs font-semibold text-white">{log.action}</div>
-                        <div className="text-[10px] text-slate-300">{log.user_name} ({log.user_role})</div>
+                        <div className="text-xs font-semibold text-white">{t(log.action)}</div>
+                        <div className="text-[10px] text-slate-300">{t(log.user_name)} ({t(log.user_role)})</div>
                       </div>
                     ))}
                   </div>
@@ -451,30 +451,30 @@ export const GisSpatialViewer = () => {
                 <div className="bg-slate-950/80 border border-emerald-500/30 rounded-2xl p-4 space-y-2 text-xs">
                   <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
                     <span className="font-bold text-emerald-400 text-[11px] uppercase tracking-wider flex items-center gap-1">
-                      <Maximize2 className="w-3.5 h-3.5" />Exact Boundary Corner Lat / Lng Box</span>
+                      <Maximize2 className="w-3.5 h-3.5" />{t('Exact Boundary Corner Lat / Lng Box')}</span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
                     <div className="p-2 bg-slate-900 rounded-xl border border-slate-800 space-y-0.5">
-                      <span className="text-slate-500 block font-sans font-bold">North-West Corner</span>
+                      <span className="text-slate-500 block font-sans font-bold">{t('North-West Corner')}</span>
                       <span className="text-white block">{boundsInfo.nw[0]} N</span>
                       <span className="text-slate-400 block">{boundsInfo.nw[1]} E</span>
                     </div>
 
                     <div className="p-2 bg-slate-900 rounded-xl border border-slate-800 space-y-0.5">
-                      <span className="text-slate-500 block font-sans font-bold">North-East Corner</span>
+                      <span className="text-slate-500 block font-sans font-bold">{t('North-East Corner')}</span>
                       <span className="text-white block">{boundsInfo.ne[0]} N</span>
                       <span className="text-slate-400 block">{boundsInfo.ne[1]} E</span>
                     </div>
 
                     <div className="p-2 bg-slate-900 rounded-xl border border-slate-800 space-y-0.5">
-                      <span className="text-slate-500 block font-sans font-bold">South-West Corner</span>
+                      <span className="text-slate-500 block font-sans font-bold">{t('South-West Corner')}</span>
                       <span className="text-white block">{boundsInfo.sw[0]} N</span>
                       <span className="text-slate-400 block">{boundsInfo.sw[1]} E</span>
                     </div>
 
                     <div className="p-2 bg-slate-900 rounded-xl border border-slate-800 space-y-0.5">
-                      <span className="text-slate-500 block font-sans font-bold">South-East Corner</span>
+                      <span className="text-slate-500 block font-sans font-bold">{t('South-East Corner')}</span>
                       <span className="text-white block">{boundsInfo.se[0]} N</span>
                       <span className="text-slate-400 block">{boundsInfo.se[1]} E</span>
                     </div>
@@ -483,19 +483,19 @@ export const GisSpatialViewer = () => {
               )}
             </div>
           ) : (
-            <div className="text-center py-12 text-slate-500 text-xs">Select a parcel from map to view GIS spatial attributes.</div>
+            <div className="text-center py-12 text-slate-500 text-xs">{t('Select a parcel from map to view GIS spatial attributes.')}</div>
           )}
         </div>
 
         {/* Legend Panel */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950/60 text-[11px] space-y-2">
-          <span className="text-slate-400 font-semibold block text-[10px] uppercase tracking-wider">Parcel Status Legend</span>
+        <div className="p-3 border-t border-slate-800 bg-slate-950/60 text-[11px] space-y-2">
+          <span className="text-slate-400 font-semibold block text-[10px] uppercase tracking-wider">{t('Parcel Status Legend')}</span>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-slate-300">
-            <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>Possessed</div>
-            <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-cyan-500"></span>Awarded</div>
-            <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span>Verified</div>
-            <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>Notified</div>
-            <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>Disputed</div>
+            <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>{t('Possessed')}</div>
+            <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-cyan-500"></span>{t('Awarded')}</div>
+            <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span>{t('Verified')}</div>
+            <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>{t('Notified')}</div>
+            <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>{t('Disputed')}</div>
           </div>
         </div>
       </div>
@@ -511,7 +511,7 @@ export const GisSpatialViewer = () => {
             }`}
           >
             <Globe className="w-3.5 h-3.5" />
-            <span>Standard Map</span>
+            <span>{t('Standard Map')}</span>
           </button>
 
           <button
@@ -521,7 +521,7 @@ export const GisSpatialViewer = () => {
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
-            <span>Satellite View</span>
+            <span>{t('Satellite View')}</span>
           </button>
         </div>
 
@@ -603,9 +603,9 @@ export const GisSpatialViewer = () => {
                   ✕
                 </button>
                 <strong className="block text-emerald-400 text-sm">{selectedParcel.ulpin}</strong>
-                <div><span className="text-slate-400">Owner:</span> <strong>{selectedParcel.owner_name}</strong></div>
-                <div><span className="text-slate-400">Survey No:</span> <strong>{selectedParcel.survey_number}</strong></div>
-                <div><span className="text-slate-400">Area:</span> <strong>{selectedParcel.area_ha} Ha</strong></div>
+                <div><span className="text-slate-400">{t('Owner')}:</span> <strong>{t(selectedParcel.owner_name)}</strong></div>
+                <div><span className="text-slate-400">{t('Survey No')}:</span> <strong>{selectedParcel.survey_number}</strong></div>
+                <div><span className="text-slate-400">{t('Area')}:</span> <strong>{selectedParcel.area_ha} {t('Ha')}</strong></div>
                 <div className="text-[10px] font-mono text-slate-500 pt-1 border-t border-slate-700/50 mt-1">
                   GPS: {selectedParcel.lat.toFixed(4)}, {selectedParcel.lng.toFixed(4)}
                 </div>
@@ -648,16 +648,16 @@ export const GisSpatialViewer = () => {
               <Popup>
                 <div className="text-xs space-y-1 font-mono">
                   <strong className="block text-rose-600 font-sans font-bold">
-                    📍 {userLocation.accuracy ? (userLocation.accuracy > 2000 ? 'Regional IP Gateway' : 'GPS Location') : 'Selected Custom Point'}
+                    📍 {userLocation.accuracy ? (userLocation.accuracy > 2000 ? t('Regional IP Gateway') : t('GPS Location')) : t('Selected Custom Point')}
                   </strong>
                   {userLocation.accuracy && (
                     <div className="text-[10px] text-amber-600 font-sans font-semibold">
-                      Accuracy: ±{userLocation.accuracy > 1000 ? `${(userLocation.accuracy / 1000).toFixed(1)} km` : `${userLocation.accuracy}m`}
+                      {t('Accuracy:')} ±{userLocation.accuracy > 1000 ? `${(userLocation.accuracy / 1000).toFixed(1)} ${t('km')}` : `${userLocation.accuracy} ${t('m')}`}
                     </div>
                   )}
                   <div>Lat: {userLocation.lat}</div>
                   <div>Lng: {userLocation.lng}</div>
-                  <div className="text-[10px] text-slate-500 font-sans italic pt-1 border-t border-slate-200">💡 Drag pin anywhere on map to micro-adjust</div>
+                  <div className="text-[10px] text-slate-500 font-sans italic pt-1 border-t border-slate-200">💡 {t('Drag pin anywhere on map to micro-adjust')}</div>
                 </div>
               </Popup>
             </Marker>

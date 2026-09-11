@@ -192,6 +192,17 @@ export const initDb = async () => {
     )
   `);
 
+  await runOn(projectsDb, `
+    CREATE TABLE IF NOT EXISTS dynamic_translations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      source_text TEXT NOT NULL,
+      target_lang TEXT NOT NULL,
+      translated_text TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(source_text, target_lang)
+    )
+  `);
+
   // Initialize Finance Schema
   await runOn(financeDb, `
     CREATE TABLE IF NOT EXISTS compensation (

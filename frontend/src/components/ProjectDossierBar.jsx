@@ -4,7 +4,7 @@ import { fetchProjects, fetchProjectDetail } from '../services/api';
 import { Building2, ChevronRight, Layers } from 'lucide-react';
 
 export const ProjectDossierBar = () => {
-  const { selectedProjectId, setSelectedProjectId, projectRefreshCount } = useAuth();
+  const { selectedProjectId, setSelectedProjectId, projectRefreshCount, t } = useAuth();
   const [projects, setProjects] = useState([]);
   const [activeProject, setActiveProject] = useState(null);
 
@@ -33,8 +33,8 @@ export const ProjectDossierBar = () => {
   if (!activeProject) return null;
 
   return (
-    <div className="bg-slate-900/95 border-b border-slate-800 px-4 lg:px-8 py-2 sticky top-0 z-20 shadow-md backdrop-blur-md">
-      <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-4 text-xs">
+    <div className="bg-slate-900/95 border-b border-slate-800 px-3 sm:px-4 py-1.5 sticky top-0 z-20 shadow-md backdrop-blur-md">
+      <div className="w-full flex items-center justify-between gap-4 text-xs">
         
         {/* Dedicated Project Selector */}
         <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -43,16 +43,16 @@ export const ProjectDossierBar = () => {
           </div>
 
           <div className="flex items-center gap-2 min-w-0">
-            <span className="text-slate-400 text-xs font-medium shrink-0 hidden sm:inline">Active Project:</span>
+            <span className="text-slate-400 text-xs font-medium shrink-0 hidden sm:inline">{t('Active Project:')}</span>
 
             <select
               value={selectedProjectId}
               onChange={(e) => handleSelect(e.target.value)}
-              className="bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-xl text-xs font-bold text-white py-1.5 px-3 focus:outline-none focus:border-emerald-500 transition cursor-pointer max-w-[320px] sm:max-w-[480px] truncate"
+              className="bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-xl text-xs font-bold text-white py-1.5 px-3 focus:outline-none focus:border-emerald-500 transition cursor-pointer max-w-[180px] sm:max-w-[480px] truncate"
             >
               {projects.map(p => (
                 <option key={p.id} value={p.id}>
-                  {p.name} ({p.code})
+                  {t(p.name)} ({p.code})
                 </option>
               ))}
             </select>
@@ -61,7 +61,7 @@ export const ProjectDossierBar = () => {
 
         {/* Project Identifier Badge */}
         <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[10px] font-mono font-bold px-2.5 py-1 bg-slate-800 border border-slate-700/80 rounded-lg text-emerald-400">
+          <span className="notranslate text-[10px] font-mono font-bold px-2 py-1 bg-slate-800 border border-slate-700/80 rounded-lg text-emerald-400">
             {activeProject.code}
           </span>
         </div>
