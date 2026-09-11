@@ -19,8 +19,6 @@ const loadedLocales = {
   en: enTranslations
 };
 
-const AuthContext = createContext();
-
 export const SUPPORTED_LANGUAGES = [
   { code: 'en', name: 'English', native: 'English' },
   { code: 'hi', name: 'Hindi', native: 'हिन्दी' },
@@ -117,6 +115,36 @@ export const ROLES = {
     authorizedSteps: []
   }
 };
+
+const defaultAuthContext = {
+  user: null,
+  activeRole: ROLES.CITIZEN,
+  isAuthenticated: false,
+  login: () => {},
+  logout: () => {},
+  selectedProjectId: 'PROJ-KBIL-003',
+  setSelectedProjectId: () => {},
+  activeTab: 'dashboard',
+  setActiveTab: () => {},
+  notifications: [],
+  addNotification: () => {},
+  markNotificationsRead: () => {},
+  isTabAllowed: () => false,
+  isStepAuthorized: () => false,
+  projectRefreshCount: 0,
+  notifyProjectUpdated: () => {},
+  theme: 'dark',
+  toggleTheme: () => {},
+  language: 'en',
+  setAppLanguage: () => {},
+  toggleLanguage: () => {},
+  isMobileMenuOpen: false,
+  setIsMobileMenuOpen: () => {},
+  translateDynamic: (t) => t,
+  t: (k) => k
+};
+
+const AuthContext = createContext(defaultAuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
@@ -277,12 +305,12 @@ export const AuthProvider = ({ children }) => {
       const roleKey = user ? user.role.id : 'ALL';
       const fetched = await fetchNotifications(roleKey);
       
-      const mapped = fetched.map(n => {
-        const d = new Date(n.created_at);
+      const mapped = (fetched || []).map(n => {
+        const d = n.created_at ? new Date(n.created_at) : new Date();
         let timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         return {
-          id: n.id,
-          text: n.text,
+          id: n.id || Math.random(),
+          text: n.text || '',
           time: timeStr,
           unread: n.unread === 1 || n.unread === true
         };
@@ -405,4 +433,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => useContext(AuthContext) || defaultAuthContext;

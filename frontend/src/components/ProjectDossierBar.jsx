@@ -4,7 +4,8 @@ import { fetchProjects, fetchProjectDetail } from '../services/api';
 import { Building2, ChevronRight, Layers } from 'lucide-react';
 
 export const ProjectDossierBar = () => {
-  const { selectedProjectId, setSelectedProjectId, projectRefreshCount, t } = useAuth();
+  const { selectedProjectId, setSelectedProjectId, projectRefreshCount, theme, t } = useAuth();
+  const isDark = theme === 'dark';
   const [projects, setProjects] = useState([]);
   const [activeProject, setActiveProject] = useState(null);
 
@@ -33,22 +34,32 @@ export const ProjectDossierBar = () => {
   if (!activeProject) return null;
 
   return (
-    <div className="bg-slate-900/95 border-b border-slate-800 px-3 sm:px-4 py-1.5 sticky top-0 z-20 shadow-md backdrop-blur-md">
-      <div className="w-full flex items-center justify-between gap-4 text-xs">
+    <div className={`border-b px-2.5 sm:px-4 py-1.5 sticky top-0 z-20 shadow-sm backdrop-blur-md transition-colors ${
+      isDark ? 'bg-slate-900/95 border-slate-800 text-slate-200' : 'bg-white/95 border-slate-200 text-slate-800'
+    }`}>
+      <div className="w-full flex items-center justify-between gap-2 sm:gap-4 text-xs">
         
         {/* Dedicated Project Selector */}
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="p-1.5 bg-emerald-500/10 rounded-lg text-emerald-400 border border-emerald-500/20 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          <div className={`p-1.5 rounded-lg border shrink-0 ${
+            isDark ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-emerald-50 text-emerald-600 border-emerald-200'
+          }`}>
             <Building2 className="w-4 h-4" />
           </div>
 
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-slate-400 text-xs font-medium shrink-0 hidden sm:inline">{t('Active Project:')}</span>
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <span className={`text-xs font-medium shrink-0 hidden sm:inline ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              {t('Active Project:')}
+            </span>
 
             <select
               value={selectedProjectId}
               onChange={(e) => handleSelect(e.target.value)}
-              className="bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-xl text-xs font-bold text-white py-1.5 px-3 focus:outline-none focus:border-emerald-500 transition cursor-pointer max-w-[180px] sm:max-w-[480px] truncate"
+              className={`border rounded-xl text-xs font-bold py-1.5 px-2 sm:px-3 focus:outline-none focus:border-emerald-500 transition cursor-pointer max-w-[160px] xs:max-w-[200px] sm:max-w-[480px] truncate ${
+                isDark 
+                  ? 'bg-slate-800 hover:bg-slate-750 border-slate-700 text-white' 
+                  : 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-900'
+              }`}
             >
               {projects.map(p => (
                 <option key={p.id} value={p.id}>
@@ -61,7 +72,9 @@ export const ProjectDossierBar = () => {
 
         {/* Project Identifier Badge */}
         <div className="flex items-center gap-2 shrink-0">
-          <span className="notranslate text-[10px] font-mono font-bold px-2 py-1 bg-slate-800 border border-slate-700/80 rounded-lg text-emerald-400">
+          <span className={`notranslate text-[10px] font-mono font-bold px-2 py-1 border rounded-lg ${
+            isDark ? 'bg-slate-800 border-slate-700/80 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+          }`}>
             {activeProject.code}
           </span>
         </div>

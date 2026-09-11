@@ -48,6 +48,12 @@ export const fetchDashboardAnalytics = async () => {
         { ministry: 'Ministry of Jal Shakti', project_count: 1, budget_cr: 9460.0 },
         { ministry: 'Ministry of New and Renewable Energy', project_count: 1, budget_cr: 5600.0 }
       ],
+      parcelStatusCounts: [
+        { status: 'Acquired', count: 18, total_area_ha: 6151.50 },
+        { status: 'Joint Measurement (JMS)', count: 8, total_area_ha: 1240.20 },
+        { status: 'Section 11 Notification', count: 6, total_area_ha: 580.00 },
+        { status: 'Section 19 Declaration', count: 4, total_area_ha: 239.75 }
+      ],
       recentAudit: [
         { id: 1, user_role: 'District Collector', user_name: 'Dr. R. K. Sharma', action: 'Approved Sec 23 Award', timestamp: new Date().toISOString() },
         { id: 2, user_role: 'PFMS Nodal Officer', user_name: 'DBT Engine', action: 'Disbursed ₹ 3,120 Cr', timestamp: new Date().toISOString() }
@@ -228,7 +234,7 @@ export const closeGrievance = async (id) => {
 export const fetchNotifications = async (roleKey) => {
   try {
     const res = await axios.get(`${API_BASE}/notifications`, { params: roleKey ? { role_key: roleKey } : {} });
-    return res.data.data;
+    return res.data?.data || [];
   } catch (err) {
     return [];
   }

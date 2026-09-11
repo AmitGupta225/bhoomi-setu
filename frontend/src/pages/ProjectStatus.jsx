@@ -144,9 +144,9 @@ export const ProjectStatus = () => {
   ];
 
   return (
-    <div className="p-4 lg:p-8 space-y-8 max-w-full overflow-x-hidden">
+    <div className="px-2.5 sm:px-4 lg:px-8 py-3 sm:py-6 space-y-4 sm:space-y-8 max-w-full overflow-x-hidden">
       {/* Page Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-6 rounded-3xl">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-2xl sm:rounded-3xl">
         <div className="space-y-1 min-w-0">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-400">
             <GitMerge className="w-4 h-4 shrink-0" />
@@ -189,7 +189,7 @@ export const ProjectStatus = () => {
       </div>
 
       {/* Main Body Executive Summary Card - FULL Department Name (No Truncation) */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 border border-slate-800 p-6 rounded-3xl space-y-4 shadow-xl">
+      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 border border-slate-800 p-4 sm:p-6 rounded-2xl sm:rounded-3xl space-y-4 shadow-xl">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 text-xs flex-wrap">
@@ -253,7 +253,7 @@ export const ProjectStatus = () => {
       </div>
 
       {/* 10-Step Process Timeline Cards - FULL UNTRUNCATED TEXT DISPLAY */}
-      <div className="bg-slate-900/90 border border-slate-800 p-6 rounded-3xl space-y-6 shadow-xl">
+      <div className="bg-slate-900/90 border border-slate-800 p-4 sm:p-6 rounded-2xl sm:rounded-3xl space-y-6 shadow-xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
           <div className="space-y-1">
             <h2 className="text-lg font-extrabold text-white font-heading">{t('10-Step Sequential Legal Process Pipeline')}</h2>
@@ -328,7 +328,7 @@ export const ProjectStatus = () => {
 
       {/* Selected Step Information Details Card */}
       {activeStage && (
-        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-4">
+        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
             <div>
               <span className="text-xs font-mono text-emerald-400 font-bold">{t('Step')} {activeStage.stage_number} {t('of')} 10</span>

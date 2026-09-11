@@ -25,6 +25,54 @@ const CitizenPortal = lazy(() => import('./pages/CitizenPortal').then(m => ({ de
 const FieldSurveyMobile = lazy(() => import('./pages/FieldSurveyMobile').then(m => ({ default: m.FieldSurveyMobile })));
 const DocumentAuditLedger = lazy(() => import('./pages/DocumentAuditLedger').then(m => ({ default: m.DocumentAuditLedger })));
 
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-4 min-h-[300px]">
+          <div className="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 font-black text-xl">
+            !
+          </div>
+          <h2 className="text-base font-bold text-white">Something went wrong in this workspace</h2>
+          <p className="text-xs text-slate-400 max-w-md font-mono">
+            {this.state.error?.message || 'An unexpected rendering error occurred.'}
+          </p>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => this.setState({ hasError: false, error: null })}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold rounded-xl text-xs transition"
+            >
+              Try Again
+            </button>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl text-xs transition border border-slate-700"
+            >
+              Reload Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const ViewLoader = () => (
   <div className="flex-1 flex flex-col items-center justify-center p-8 space-y-3 min-h-[300px]">
     <div className="w-8 h-8 rounded-full border-2 border-emerald-500/30 border-t-emerald-400 animate-spin"></div>
@@ -120,9 +168,11 @@ export function MainLayout() {
           <main className={`flex-1 overflow-x-hidden ${activeTab === 'gis' ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-20 md:pb-6'} flex flex-col min-w-0`}>
             {activeTab !== 'dashboard' && activeTab !== 'citizen' && activeTab !== 'proposal' && <ProjectDossierBar />}
             <div className={`flex-1 min-w-0 max-w-full overflow-x-hidden ${activeTab === 'gis' ? 'flex flex-col h-full overflow-hidden' : ''}`}>
-              <Suspense fallback={<ViewLoader />}>
-                {renderActiveView()}
-              </Suspense>
+              <ErrorBoundary>
+                <Suspense fallback={<ViewLoader />}>
+                  {renderActiveView()}
+                </Suspense>
+              </ErrorBoundary>
             </div>
           </main>
         </div>
@@ -168,8 +218,10 @@ export function MainLayout() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <MainLayout />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <MainLayout />
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

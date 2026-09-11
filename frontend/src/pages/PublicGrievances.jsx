@@ -47,14 +47,14 @@ export const PublicGrievances = () => {
   }
 
   return (
-    <div className="p-4 lg:p-8 space-y-6 max-w-[1400px] mx-auto font-sans text-slate-100">
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-xl font-bold text-white flex items-center gap-3">
-            <MessageSquare className="w-6 h-6 text-amber-400" />
+    <div className="px-2.5 sm:px-4 lg:px-8 py-3 sm:py-6 space-y-4 sm:space-y-6 max-w-[1400px] mx-auto font-sans text-slate-100">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 sm:mb-8">
+          <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5">
+            <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6 text-amber-400 shrink-0" />
             <span>{t('Public Grievances & Petitions')}</span>
           </h2>
-          <span className="text-sm px-3 py-1.5 bg-amber-500/20 text-amber-400 rounded-lg font-bold">
+          <span className="text-xs sm:text-sm px-3 py-1.5 bg-amber-500/20 text-amber-400 rounded-xl font-bold self-start sm:self-auto">
             {grievances.filter(g => g.status === 'Pending').length} {t('Pending Petitions')}
           </span>
         </div>
@@ -67,9 +67,9 @@ export const PublicGrievances = () => {
         ) : (
           <div className="space-y-4">
             {grievances.map(g => (
-              <div key={g.id} className="p-5 bg-slate-950/80 border border-slate-800 rounded-2xl flex flex-col xl:flex-row xl:items-start justify-between gap-6 hover:border-slate-700 transition">
-                <div className="space-y-3 flex-1">
-                  <div className="flex items-center gap-3">
+              <div key={g.id} className="p-3.5 sm:p-5 bg-slate-950/80 border border-slate-800 rounded-xl sm:rounded-2xl flex flex-col xl:flex-row xl:items-start justify-between gap-4 sm:gap-6 hover:border-slate-700 transition">
+                <div className="space-y-3 flex-1 min-w-0">
+                  <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                     <span className="text-sm font-mono font-bold text-cyan-400">{g.token_no}</span>
                     <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
                         g.status === 'Resolved' ? 'bg-emerald-500/20 text-emerald-400' 

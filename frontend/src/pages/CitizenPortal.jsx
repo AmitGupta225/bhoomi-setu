@@ -179,9 +179,9 @@ export const CitizenPortal = () => {
   const activeDisbursement = activeData?.disbursement;
 
   return (
-    <div className="p-4 lg:p-8 space-y-8 max-w-[1400px] mx-auto font-sans text-slate-100">
+    <div className="px-2.5 sm:px-4 lg:px-8 py-3 sm:py-6 space-y-4 sm:space-y-8 max-w-[1400px] mx-auto font-sans text-slate-100">
       {/* Top Banner with Auto-Authenticated Landowner Identity */}
-      <div className="bg-gradient-to-r from-purple-950/70 via-slate-900 to-slate-900 border border-purple-500/30 p-6 rounded-3xl space-y-3 shadow-2xl">
+      <div className="bg-gradient-to-r from-purple-950/70 via-slate-900 to-slate-900 border border-purple-500/30 p-4 sm:p-6 rounded-2xl sm:rounded-3xl space-y-3 shadow-2xl">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs font-bold text-purple-400 uppercase tracking-wider">
             <Users className="w-4 h-4" />
@@ -190,7 +190,7 @@ export const CitizenPortal = () => {
         </div>
 
         <div className="space-y-1">
-          <h1 className="text-2xl font-extrabold font-heading text-white">
+          <h1 className="text-xl sm:text-2xl font-extrabold font-heading text-white">
             {t('Welcome')}, {t(user?.name) || 'Ramesh Baliram Patil'}
           </h1>
           <p className="text-xs text-slate-300 max-w-3xl">
@@ -200,7 +200,7 @@ export const CitizenPortal = () => {
       </div>
 
       {/* Dropdown Land Parcel Selection Bar */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-3 shadow-xl">
+      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 space-y-3 shadow-xl">
         <div className="flex items-center justify-between">
           <label className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2 font-heading">
             <Layers className="w-4 h-4 text-purple-400" />
@@ -229,7 +229,7 @@ export const CitizenPortal = () => {
 
       {/* Relational Land Parcel & Area-Based Compensation Dashboard */}
       {loading ? (
-        <div className="p-12 text-center text-slate-400 text-sm font-semibold bg-slate-900/60 rounded-3xl border border-slate-800 animate-pulse">{t('Loading your verified land acquisition record from database...')}</div>) : activeParcel && (<div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-6 shadow-2xl animate-in fade-in duration-300">
+        <div className="p-8 sm:p-12 text-center text-slate-400 text-sm font-semibold bg-slate-900/60 rounded-2xl sm:rounded-3xl border border-slate-800 animate-pulse">{t('Loading your verified land acquisition record from database...')}</div>) : activeParcel && (<div className="bg-slate-900/90 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 space-y-5 sm:space-y-6 shadow-2xl animate-in fade-in duration-300">
           {/* Card Header: Owner & Parcel Relational Link */}
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
             <div className="space-y-1">
@@ -402,7 +402,7 @@ export const CitizenPortal = () => {
           </div>
 
           {/* Grievance Redressal Form & Past Petitions */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-6 shadow-2xl flex flex-col">
+          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 space-y-5 sm:space-y-6 shadow-2xl flex flex-col">
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-xs font-bold text-amber-400 uppercase tracking-wider">
                 <MessageSquare className="w-4 h-4" />

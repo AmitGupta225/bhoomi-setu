@@ -57,33 +57,45 @@ export const NationalDashboard = (props) => {
     );
   }
 
-  const { kpis, stateBreakdown, parcelStatusCounts } = data;
+  const kpis = data?.kpis || {
+    total_projects: 0,
+    total_proposed_ha: 1,
+    total_acquired_ha: 0,
+    total_budget_cr: 0,
+    total_compensation_cr: 0,
+    total_affected_families: 0,
+    total_displaced_families: 0
+  };
+  const stateBreakdown = data?.stateBreakdown || [];
+  const parcelStatusCounts = data?.parcelStatusCounts || [];
 
-  const translatedStateBreakdown = (stateBreakdown || []).map(item => ({
+  const translatedStateBreakdown = stateBreakdown.map(item => ({
     ...item,
-    state: t(item.state)
+    state: t(item?.state || '')
   }));
 
-  const translatedParcelStatusCounts = (parcelStatusCounts || []).map(item => ({
+  const translatedParcelStatusCounts = parcelStatusCounts.map(item => ({
     ...item,
-    status: t(item.status)
+    status: t(item?.status || '')
   }));
 
-  const acquisitionPercent = Math.round((kpis.total_acquired_ha / kpis.total_proposed_ha) * 100) || 75;
+  const acquisitionPercent = (kpis?.total_proposed_ha && kpis.total_proposed_ha > 0)
+    ? Math.round((kpis.total_acquired_ha / kpis.total_proposed_ha) * 100)
+    : 75;
 
   const formatMoney = (val) => Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
   const handleExportCSV = () => {
     const headers = [t("Project Code"), t("Project Name"), t("State"), t("Proposed") + " (" + t("Ha") + ")", t("Acquired") + " (" + t("Ha") + ")", t("Compensation Disbursed") + " (" + t("Cr") + ")", t("Affected Families"), t("Stage")];
-    const rows = projects.map(p => [
-      p.code,
-      '"' + p.name + '"',
-      p.state,
-      p.total_land_proposed_ha,
-      p.total_land_acquired_ha,
-      p.compensation_disbursed_cr,
-      p.affected_families,
-      p.current_stage_id
+    const rows = (projects || []).map(p => [
+      p?.code || '',
+      '"' + (p?.name || '') + '"',
+      p?.state || '',
+      p?.total_land_proposed_ha || 0,
+      p?.total_land_acquired_ha || 0,
+      p?.compensation_disbursed_cr || 0,
+      p?.affected_families || 0,
+      p?.current_stage_id || ''
     ]);
 
     const csvContent = "data:text/csv;charset=utf-8," 
@@ -288,7 +300,7 @@ export const NationalDashboard = (props) => {
                   outerRadius={75}
                   paddingAngle={5}
                 >
-                  {parcelStatusCounts.map((entry, index) => (
+                  {translatedParcelStatusCounts.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
@@ -300,10 +312,10 @@ export const NationalDashboard = (props) => {
           </div>
 
           <div className="grid grid-cols-2 gap-2 text-xs">
-            {parcelStatusCounts.map((item, idx) => (
+            {translatedParcelStatusCounts.map((item, idx) => (
               <div key={idx} className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }}></span>
-                <span className="text-slate-300 leading-snug">{t(item.status)}: <strong>{item.total_area_ha} {t('Ha')}</strong></span>
+                <span className="text-slate-300 leading-snug">{item.status}: <strong>{item.total_area_ha} {t('Ha')}</strong></span>
               </div>
             ))}
           </div>
@@ -350,7 +362,7 @@ export const NationalDashboard = (props) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 text-slate-300">
-              {projects.map((proj) => (
+              {(projects || []).map((proj) => (
                 <tr key={proj.id} className="hover:bg-slate-800/40 transition">
                   <td className="py-3.5 px-4 font-semibold text-white">
                     <div>{t(proj.name)}</div>

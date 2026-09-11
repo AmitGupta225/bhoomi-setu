@@ -166,9 +166,9 @@ export const ScrutinyConsole = () => {
     : false;
 
   return (
-    <div className="p-4 lg:p-8 space-y-8 max-w-full overflow-x-hidden">
+    <div className="px-2.5 sm:px-4 lg:px-8 py-3 sm:py-6 space-y-4 sm:space-y-8 max-w-full overflow-x-hidden">
       {/* Top Banner Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-6 rounded-3xl">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-2xl sm:rounded-3xl">
         <div className="space-y-1 min-w-0">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-400">
             <UserCheck className="w-4 h-4 shrink-0" />
@@ -198,7 +198,7 @@ export const ScrutinyConsole = () => {
       )}
 
       {/* Main Body Dossier Summary Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 border border-slate-800 p-6 rounded-3xl space-y-4 shadow-xl">
+      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 border border-slate-800 p-4 sm:p-6 rounded-2xl sm:rounded-3xl space-y-4 shadow-xl">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs">
@@ -236,7 +236,7 @@ export const ScrutinyConsole = () => {
       </div>
 
       {/* Role Authorized Step Cards ONLY */}
-      <div className="bg-slate-900/90 border border-slate-800 p-6 rounded-3xl space-y-4">
+      <div className="bg-slate-900/90 border border-slate-800 p-4 sm:p-6 rounded-2xl sm:rounded-3xl space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-bold text-white font-heading">
             {t(activeRole.badge)} {t('Authorized Stages for Scrutiny')}
@@ -299,7 +299,7 @@ export const ScrutinyConsole = () => {
       {activeStage && isAuthorizedToScrutinizeCurrent && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Technical Details Box */}
-          <div className="lg:col-span-2 bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-4 min-w-0">
+          <div className="lg:col-span-2 bg-slate-900/90 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 space-y-4 min-w-0">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
               <div>
                 <span className="text-xs font-mono text-emerald-400 font-bold">{t('Step')} {activeStage.stage_number} {t('Official Review Desk')}</span>
@@ -361,7 +361,7 @@ export const ScrutinyConsole = () => {
           </div>
 
           {/* Authority Scrutiny Action Console */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-4 min-w-0">
+          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 space-y-4 min-w-0">
             <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
               <UserCheck className="w-4 h-4 shrink-0" />
               <span>{t('Official Decision Console')}</span>

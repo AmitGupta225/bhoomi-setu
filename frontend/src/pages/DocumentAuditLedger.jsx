@@ -158,7 +158,7 @@ export const DocumentAuditLedger = () => {
 
       {/* PDF Document Upload Form Modal */}
       {showUploadForm && (
-        <form onSubmit={handleUploadSubmit} className="bg-slate-900/95 border border-slate-800 p-6 rounded-3xl space-y-5 shadow-2xl animate-in fade-in">
+        <form onSubmit={handleUploadSubmit} className="bg-slate-900/95 border border-slate-800 p-4 sm:p-6 rounded-2xl sm:rounded-3xl space-y-4 sm:space-y-5 shadow-2xl animate-in fade-in">
           <div className="flex items-center justify-between border-b border-slate-800 pb-3">
             <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
               <FileUp className="w-4 h-4" />

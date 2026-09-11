@@ -127,9 +127,9 @@ export const CompensationDisbursement = () => {
   const totalAssessedAward = multipliedLandValue + (parseFloat(calcStructureValue) || 0) + solatium100 + interest12PerAnnum;
 
   return (
-    <div className="p-4 lg:p-8 space-y-8 max-w-[1600px] mx-auto">
+    <div className="px-2.5 sm:px-4 lg:px-8 py-3 sm:py-6 space-y-4 sm:space-y-8 max-w-[1600px] mx-auto">
       {/* Top Banner */}
-      <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-2xl sm:rounded-3xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-cyan-400">
             <IndianRupee className="w-4 h-4" />
@@ -184,7 +184,7 @@ export const CompensationDisbursement = () => {
       )}
 
       {/* Land Valuation Simulator Engine */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-6">
+      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 space-y-5 sm:space-y-6">
         <div className="flex items-center gap-2 text-xs font-bold text-cyan-400 uppercase tracking-wider">
           <Calculator className="w-4 h-4" />
           <span>{t('Land Valuation Calculator')}</span>
@@ -259,7 +259,7 @@ export const CompensationDisbursement = () => {
       </div>
 
       {/* Compensation Ledger & PFMS Disbursement Actions */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-4">
+      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 space-y-4">
         <h2 className="text-base font-bold text-white font-heading">{t('PFMS Direct Benefit Transfer Disbursement Ledger')}</h2>
 
         <div className="overflow-x-auto rounded-xl border border-slate-800">
