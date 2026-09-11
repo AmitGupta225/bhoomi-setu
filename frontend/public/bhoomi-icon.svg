@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a1628" />
+      <stop offset="100%" stop-color="#022c22" />
+    </linearGradient>
+    <linearGradient id="pinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+  </defs>
+  <!-- Background Circle -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)" />
+  <rect x="8" y="8" width="496" height="496" rx="120" fill="none" stroke="#10b981" stroke-width="4" stroke-opacity="0.3" />
+  
+  <!-- Map Pin Body -->
+  <path d="M256 80 C175.4 80 110 145.4 110 226 C110 324 238 424 251.2 434 C254.2 436.4 257.8 436.4 260.8 434 C274 424 402 324 402 226 C402 145.4 336.6 80 256 80 Z" fill="url(#pinGrad)" />
+  
+  <!-- Center Leaf Motif (Bhoomi) -->
+  <path d="M256 140 C210 140 170 180 170 230 C170 270 210 300 256 310 C302 300 342 270 342 230 C342 180 302 140 256 140 Z" fill="#064e3b" opacity="0.4" />
+  <path d="M256 150 C290 190 280 250 256 290 C232 250 222 190 256 150 Z" fill="url(#leafGrad)" />
+  <circle cx="256" cy="220" r="28" fill="#ffffff" />
+</svg>

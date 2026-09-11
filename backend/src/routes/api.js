@@ -8,7 +8,7 @@ import { handler_6, handler_7, handler_8, handler_9 } from '../controllers/parce
 import { handler_10, handler_11 } from '../controllers/workflowController.js';
 import { handler_12, handler_13, handler_14 } from '../controllers/compensationController.js';
 import { handler_15 } from '../controllers/rrController.js';
-import { handler_16, handler_17 } from '../controllers/fieldSurveyController.js';
+import { handler_16, handler_17, handler_sync_batch, handler_resolve_conflict } from '../controllers/fieldSurveyController.js';
 import { handler_18, handler_19 } from '../controllers/documentController.js';
 import { handler_20 } from '../controllers/citizenController.js';
 import { handler_21, handler_31 } from '../controllers/integrationController.js';
@@ -36,6 +36,8 @@ router.post('/compensation/disburse', handler_14);
 router.get('/rr', handler_15);
 router.get('/field-surveys', handler_16);
 router.post('/field-surveys', handler_17);
+router.post('/field-surveys/sync-batch', handler_sync_batch);
+router.post('/field-surveys/resolve-conflict', handler_resolve_conflict);
 router.get('/documents', handler_18);
 router.post('/documents', handler_19);
 router.get('/citizen/my-land', handler_20);

@@ -1,0 +1,19 @@
+{
+  "name": "BHOOMI SETU - National Land Acquisition Portal",
+  "short_name": "Bhoomi Setu",
+  "description": "Unified Digital Platform for Land Acquisition, Offline Cadastral Surveying, and Resettlement",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a1628",
+  "theme_color": "#0a1628",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/bhoomi-icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["government", "productivity", "utilities"]
+}

@@ -1,5 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { fetchParcels, fetchProjects, createParcel, submitFieldSurvey, approveSurvey, fetchUlpinData } from '../services/api';
+import { 
+  cacheVillageProject, 
+  getCachedParcels, 
+  getCachedProjects, 
+  queueOfflineSurvey, 
+  getOutboxItems, 
+  getOutboxStats,
+  removeOutboxItem 
+} from '../services/offlineStorage';
+import { 
+  isDeviceOnline, 
+  subscribeSyncStatus, 
+  triggerSyncNow, 
+  resolveConflictAndCommit 
+} from '../services/syncEngine';
 import { useAuth } from '../context/AuthContext';
 import { MapContainer, TileLayer, Marker, Popup, Polygon, Circle, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -16,7 +31,15 @@ import {
   Globe,
   Search,
   MapPin,
-  X
+  X,
+  Wifi,
+  WifiOff,
+  CloudUpload,
+  Download,
+  AlertTriangle,
+  RefreshCw,
+  Clock,
+  Database
 } from 'lucide-react';
 
 // Fix default leaflet marker icon bug in React
@@ -129,7 +152,18 @@ export const FieldSurveyMobile = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitSuccess, setSubmitSuccess] = useState('');
-  
+
+  // Offline & Synchronization State
+  const [isOnline, setIsOnline] = useState(() => isDeviceOnline());
+  const [outboxStats, setOutboxStats] = useState({ total: 0, pending: 0, conflicts: 0, synced: 0 });
+  const [outboxItems, setOutboxItems] = useState([]);
+  const [showOutboxModal, setShowOutboxModal] = useState(false);
+  const [isCaching, setIsCaching] = useState(false);
+  const [cacheMessage, setCacheMessage] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [selectedConflictItem, setSelectedConflictItem] = useState(null);
+  const [isResolvingConflict, setIsResolvingConflict] = useState(false);
+
   // Tabs
   
 
@@ -282,30 +316,73 @@ export const FieldSurveyMobile = () => {
     }
   };
 
+  // 1. Subscribe to network status and outbox synchronization events
+  const refreshOutbox = async () => {
+    try {
+      const items = await getOutboxItems();
+      setOutboxItems(items || []);
+      const stats = await getOutboxStats();
+      if (stats) setOutboxStats(stats);
+    } catch (e) {
+      console.warn('Failed to read outbox:', e);
+    }
+  };
+
+  useEffect(() => {
+    refreshOutbox();
+
+    const unsubscribe = subscribeSyncStatus((status) => {
+      setIsOnline(status.isOnline);
+      if (status.stats) setOutboxStats(status.stats);
+      if (status.syncStatus === 'SYNCING') setIsSyncing(true);
+      else if (status.syncStatus === 'COMPLETED' || status.syncStatus === 'ERROR' || status.syncStatus === 'IDLE') {
+        setIsSyncing(false);
+      }
+      refreshOutbox();
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // 2. Load Parcels with offline fallback from IndexedDB
   useEffect(() => {
     async function loadData() {
       setLoading(true);
-      const pList = await fetchParcels(selectedProjectId ? { project_id: selectedProjectId } : {});
-      const projList = await fetchProjects();
-      setParcels(pList);
-      setProjects(projList);
+      let pList = [];
+      let projList = [];
+
+      try {
+        pList = await fetchParcels(selectedProjectId ? { project_id: selectedProjectId } : {});
+        projList = await fetchProjects();
+      } catch (err) {
+        console.warn('[FieldSurvey] Network error, falling back to local IndexedDB:', err);
+      }
+
+      // Offline Fallbacks from IndexedDB
+      if (!pList || pList.length === 0) {
+        pList = await getCachedParcels(selectedProjectId);
+      }
+      if (!projList || projList.length === 0) {
+        projList = await getCachedProjects();
+      }
+
+      setParcels(pList || []);
+      setProjects(projList || []);
       
       let activeProjId = selectedProjectId;
-      if (projList.length > 0 && !selectedProjectId) {
+      if (projList && projList.length > 0 && !selectedProjectId) {
         activeProjId = projList[0].id;
       }
       if (activeProjId) setNewProjId(activeProjId);
       
       // Fly to active project's location
-      const activeProj = projList.find(p => p.id === activeProjId);
+      const activeProj = projList ? projList.find(p => p.id === activeProjId) : null;
       if (activeProj && activeProj.center_lat && activeProj.center_lng) {
         const pLat = parseFloat(activeProj.center_lat);
         const pLng = parseFloat(activeProj.center_lng);
         setSearchTarget({ lat: pLat, lng: pLng });
         setIsUserLocationActive(false);
         
-        // Update default polygon to be a generic boundary around project center
-        // (Only do this if they haven't selected a specific parcel to edit)
         setVertices([
           { lat: parseFloat((pLat).toFixed(5)), lng: parseFloat((pLng - 0.001).toFixed(5)) },
           { lat: parseFloat((pLat + 0.0012).toFixed(5)), lng: parseFloat((pLng + 0.0015).toFixed(5)) },
@@ -320,6 +397,66 @@ export const FieldSurveyMobile = () => {
     }
     loadData();
   }, [selectedProjectId]);
+
+  const handleDownloadVillageOffline = async () => {
+    try {
+      setIsCaching(true);
+      const activeProj = projects.find(p => p.id === newProjId) || projects[0];
+      if (!activeProj) {
+        alert(t('No project selected to cache.'));
+        return;
+      }
+      const res = await cacheVillageProject(activeProj, parcels);
+      setCacheMessage(`✓ ${t('Successfully cached')} ${res.count} ${t('village land parcels for offline fieldwork!')}`);
+      setTimeout(() => setCacheMessage(''), 6000);
+    } catch (err) {
+      alert(t('Failed to cache village for offline: ') + err.message);
+    } finally {
+      setIsCaching(false);
+    }
+  };
+
+  const handleSyncNow = async () => {
+    setIsSyncing(true);
+    try {
+      const res = await triggerSyncNow();
+      if (res && res.success) {
+        await refreshOutbox();
+        // Reload parcels
+        const pList = await fetchParcels(selectedProjectId ? { project_id: selectedProjectId } : {});
+        if (pList && pList.length > 0) setParcels(pList);
+        setSubmitSuccess(t('Outbox synchronization complete!'));
+        setTimeout(() => setSubmitSuccess(''), 5000);
+      } else {
+        alert(res?.error || t('Sync failed'));
+      }
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleResolveConflict = async (resolution, targetItem = null) => {
+    const item = targetItem || selectedConflictItem;
+    if (!item) return;
+    setIsResolvingConflict(true);
+    try {
+      const res = await resolveConflictAndCommit(
+        item.id,
+        resolution,
+        item.data
+      );
+      if (res && res.success) {
+        setSelectedConflictItem(null);
+        await refreshOutbox();
+        setSubmitSuccess(t('Conflict resolved successfully!'));
+        setTimeout(() => setSubmitSuccess(''), 5000);
+      } else {
+        alert(res?.error || t('Failed to resolve conflict'));
+      }
+    } finally {
+      setIsResolvingConflict(false);
+    }
+  };
 
   const handleAddCurrentGpsAsVertex = () => {
     if (navigator.geolocation) {
@@ -426,38 +563,56 @@ export const FieldSurveyMobile = () => {
 
   const handleInspectionSubmit = async (e) => {
     e.preventDefault();
-    if (!inspParcelId) return alert('Select a parcel');
+    if (!inspParcelId) return alert(t('Select a parcel'));
     setInspLoading(true);
+    const p = parcels.find(x => x.id === inspParcelId) || {};
+    const surveyPayload = {
+      project_id: p.project_id || newProjId,
+      parcel_id: p.id || inspParcelId,
+      ulpin: p.ulpin || null,
+      surveyor_name: activeRole?.label || 'Field Surveyor',
+      surveyor_id: 'SURV-881',
+      gps_lat: userLocation ? userLocation.lat : p.lat,
+      gps_lng: userLocation ? userLocation.lng : p.lng,
+      land_condition: inspLandCondition,
+      land_type: inspLandType,
+      affected_families_count: inspFamilies,
+      structures_count: inspStructures,
+      trees_count: inspTrees,
+      family_category: inspFamilyCategory,
+      family_members_count: inspFamilyMembers,
+      is_tribal_land: inspTribal,
+      consent_obtained: inspConsent,
+      verification_notes: inspNotes
+    };
+
+    if (!isOnline) {
+      await queueOfflineSurvey(surveyPayload, 'INSPECTION');
+      setSubmitSuccess(t('Offline Mode: Inspection saved to local Outbox! Will auto-sync when online.'));
+      setTimeout(() => setSubmitSuccess(''), 6000);
+      setInspParcelId('');
+      await refreshOutbox();
+      setInspLoading(false);
+      return;
+    }
+
     try {
-      const p = parcels.find(x => x.id === inspParcelId);
-      await submitFieldSurvey({
-        project_id: p.project_id,
-        parcel_id: p.id,
-        surveyor_name: activeRole.label,
-        surveyor_id: 'SURV-881',
-        gps_lat: userLocation ? userLocation.lat : p.lat,
-        gps_lng: userLocation ? userLocation.lng : p.lng,
-        land_condition: inspLandCondition,
-        land_type: inspLandType,
-        affected_families_count: inspFamilies,
-        structures_count: inspStructures,
-        trees_count: inspTrees,
-        family_category: inspFamilyCategory,
-        family_members_count: inspFamilyMembers,
-        is_tribal_land: inspTribal,
-        consent_obtained: inspConsent,
-        verification_notes: inspNotes
-      });
-      setSubmitSuccess('Field Inspection Report Submitted!');
+      await submitFieldSurvey(surveyPayload);
+      setSubmitSuccess(t('Field Inspection Report Submitted!'));
       setTimeout(() => setSubmitSuccess(''), 5000);
       setInspParcelId('');
     } catch (err) {
-      alert('Error: ' + err.message);
+      console.warn('Online submission failed, falling back to local outbox:', err);
+      await queueOfflineSurvey(surveyPayload, 'INSPECTION');
+      setSubmitSuccess(t('Network unreachable. Inspection safely queued to offline outbox!'));
+      setTimeout(() => setSubmitSuccess(''), 6000);
+      setInspParcelId('');
+      await refreshOutbox();
     }
     setInspLoading(false);
   };
 
-const handleCreateMultiVertexParcel = async (e) => {
+  const handleCreateMultiVertexParcel = async (e) => {
     e.preventDefault();
     if (!canSurvey) {
       alert('Role Restriction: Only Field Surveyors or District SLAOs can map new land parcels.');
@@ -478,25 +633,48 @@ const handleCreateMultiVertexParcel = async (e) => {
     const calculatedAreaHaRaw = parseFloat(calculatePolygonAreaHa(vertices));
     const finalAreaHa = manualAreaHa !== null && manualAreaHa !== '' ? parseFloat(manualAreaHa) : calculatedAreaHaRaw;
 
-    try {
-      const res = await createParcel({
-        project_id: newProjId,
-        survey_number: newSurveyNo,
-        khata_number: newKhataNo,
-        village: newVillage,
-        land_type: newLandType,
-        owner_name: newOwnerName,
-        owner_contact: newOwnerContact,
-        address: newAddress,
-        area_ha: finalAreaHa > 0 ? finalAreaHa : 1.25,
-        vertices: vertices,
-        lat: vertices[0].lat,
-        lng: vertices[0].lng
-      });
+    const provisionalUlpin = `IN-MH-OFF-${Date.now().toString().slice(-6)}`;
+    const parcelPayload = {
+      project_id: newProjId,
+      ulpin: provisionalUlpin,
+      survey_number: newSurveyNo,
+      khata_number: newKhataNo,
+      village: newVillage,
+      land_type: newLandType,
+      owner_name: newOwnerName,
+      owner_contact: newOwnerContact,
+      address: newAddress,
+      area_ha: finalAreaHa > 0 ? finalAreaHa : 1.25,
+      coordinates: vertices.map(v => [v.lat, v.lng]),
+      vertices: vertices,
+      lat: vertices[0].lat,
+      lng: vertices[0].lng,
+      surveyor_name: activeRole?.label || 'Field Surveyor',
+      affected_families_count: inspFamilies,
+      structures_count: inspStructures,
+      trees_count: inspTrees,
+      is_tribal_land: inspTribal,
+      consent_obtained: inspConsent,
+      verification_notes: inspNotes
+    };
 
-      
+    if (!isOnline) {
+      await queueOfflineSurvey(parcelPayload, 'NEW_PARCEL');
+      const localParcel = {
+        id: `offline-${Date.now()}`,
+        ...parcelPayload,
+        status: 'Verified'
+      };
+      setParcels(prev => [localParcel, ...prev]);
+      setSubmitSuccess(`${t('Offline Mode: New Parcel')} (${provisionalUlpin}) ${t('saved to outbox & rendered on map!')}`);
+      setTimeout(() => setSubmitSuccess(''), 7000);
+      await refreshOutbox();
+      return;
+    }
+
+    try {
+      const res = await createParcel(parcelPayload);
       if (res.success) {
-        // Also automatically submit the LARR Inspection Report for this new parcel!
         try {
           await submitFieldSurvey(res.id, {
             land_type: newLandType,
@@ -514,13 +692,22 @@ const handleCreateMultiVertexParcel = async (e) => {
         }
 
         setSubmitSuccess(`New Parcel (ULPIN: ${res.ulpin}) & LARR Report created successfully!`);
-
         const pList = await fetchParcels();
         setParcels(pList);
         setTimeout(() => setSubmitSuccess(''), 5000);
       }
     } catch (err) {
-      alert('Parcel Creation Failed: ' + err.message);
+      console.warn('Online create failed, falling back to local outbox:', err);
+      await queueOfflineSurvey(parcelPayload, 'NEW_PARCEL');
+      const localParcel = {
+        id: `offline-${Date.now()}`,
+        ...parcelPayload,
+        status: 'Verified'
+      };
+      setParcels(prev => [localParcel, ...prev]);
+      setSubmitSuccess(`${t('Network error. New Parcel')} (${provisionalUlpin}) ${t('saved to offline outbox!')}`);
+      setTimeout(() => setSubmitSuccess(''), 7000);
+      await refreshOutbox();
     }
   };
 
@@ -570,7 +757,78 @@ const handleCreateMultiVertexParcel = async (e) => {
         )}
       </div>
 
-      
+      {/* Connectivity & Offline Fieldwork Control Bar */}
+      <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-3 shadow-xl flex flex-wrap items-center justify-between gap-3 backdrop-blur-md">
+        <div className="flex items-center flex-wrap gap-2.5">
+          {isOnline ? (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-400 text-xs font-bold shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <Wifi size={14} />
+              <span>{t('Online • Cloud Connected')}</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-rose-950/70 border border-rose-500/50 text-rose-300 text-xs font-bold shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+              <WifiOff size={14} />
+              <span>{t('Offline Mode • Satellite GPS Active (Zero Cellular)')}</span>
+            </div>
+          )}
+
+          {/* Cache Village Button */}
+          <button
+            type="button"
+            disabled={isCaching}
+            onClick={handleDownloadVillageOffline}
+            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"
+            title={t('Download all village cadastral parcels into local IndexedDB')}
+          >
+            <Download size={13} className={isCaching ? 'animate-bounce text-emerald-400' : 'text-slate-400'} />
+            <span>{isCaching ? t('Caching Dossier...') : t('Cache Village for Offline')}</span>
+          </button>
+          {cacheMessage && (
+            <span className="text-xs text-emerald-400 font-medium animate-in fade-in">{cacheMessage}</span>
+          )}
+        </div>
+
+        {/* Outbox & Conflict Pill */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowOutboxModal(true)}
+            className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-2 transition shadow-sm ${
+              outboxStats.conflicts > 0
+                ? 'bg-rose-500/20 border-rose-500/50 text-rose-300 hover:bg-rose-500/30 animate-pulse'
+                : outboxStats.pending > 0
+                ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 hover:bg-amber-500/30'
+                : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:text-white'
+            }`}
+          >
+            <CloudUpload size={14} className={isSyncing ? 'animate-spin text-cyan-400' : ''} />
+            <span>
+              {outboxStats.conflicts > 0
+                ? `${outboxStats.conflicts} ${t('Sync Conflict(s)')}`
+                : `${outboxStats.pending} ${t('Pending Outbox')}`}
+            </span>
+            {outboxStats.pending > 0 && isOnline && (
+              <span className="px-1.5 py-0.2 text-[10px] bg-emerald-500 text-slate-950 rounded font-black">
+                {t('Ready')}
+              </span>
+            )}
+          </button>
+
+          {isOnline && outboxItems.some(i => i.status !== 'SYNCED') && (
+            <button
+              type="button"
+              disabled={isSyncing}
+              onClick={handleSyncNow}
+              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 text-xs font-bold hover:brightness-110 flex items-center gap-1.5 transition shadow"
+            >
+              <RefreshCw size={13} className={isSyncing ? 'animate-spin' : ''} />
+              <span>{isSyncing ? t('Syncing...') : t('Sync Now')}</span>
+            </button>
+          )}
+        </div>
+      </div>
 
       {!canSurvey && (
         <div className="p-4 bg-amber-950/40 border border-amber-500/30 rounded-2xl text-xs text-amber-300 flex items-center gap-3">
@@ -1071,6 +1329,247 @@ const handleCreateMultiVertexParcel = async (e) => {
         
       </div>
  
-</div>
+      {/* Offline Outbox & Conflict Adjudication Modal */}
+      {showOutboxModal && (
+        <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95">
+            {/* Header */}
+            <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                  <Database size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white font-heading">
+                    {t('Offline Field Outbox & Conflict Center')}
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    {t('Manage locally queued field surveys and resolve cloud synchronization conflicts')}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowOutboxModal(false)}
+                className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Outbox Metrics Banner */}
+            <div className="px-5 py-3 bg-slate-800/40 border-b border-slate-800/80 flex items-center justify-between flex-wrap gap-2 text-xs">
+              <div className="flex items-center gap-4">
+                <span className="text-slate-400">
+                  {t('Total in Queue:')} <strong className="text-white font-mono">{outboxItems.length}</strong>
+                </span>
+                <span className="text-amber-400">
+                  {t('Pending:')} <strong className="font-mono">{outboxStats.pending}</strong>
+                </span>
+                {outboxStats.conflicts > 0 && (
+                  <span className="text-rose-400 font-bold flex items-center gap-1">
+                    <AlertTriangle size={12} />
+                    {t('Conflicts:')} <strong className="font-mono">{outboxStats.conflicts}</strong>
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {isOnline ? (
+                  <span className="text-emerald-400 text-[11px] font-semibold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    {t('Connected • Ready to Sync')}
+                  </span>
+                ) : (
+                  <span className="text-rose-400 text-[11px] font-semibold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                    {t('Offline • Actions stored in local IndexedDB')}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Outbox Items List */}
+            <div className="p-4 sm:p-5 overflow-y-auto space-y-3 flex-1 custom-scrollbar">
+              {outboxItems.length === 0 ? (
+                <div className="text-center py-12 text-slate-500 space-y-2">
+                  <CheckCircle2 size={36} className="mx-auto text-emerald-500/60" />
+                  <p className="text-sm font-semibold text-slate-300">{t('Outbox is completely clear!')}</p>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                    {t('All cadastral surveys and parcel polygons are safely synced with the National Land Acquisition Portal.')}
+                  </p>
+                </div>
+              ) : (
+                outboxItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`p-4 rounded-2xl border transition ${
+                      item.status === 'CONFLICT'
+                        ? 'bg-rose-950/20 border-rose-500/50'
+                        : item.status === 'SYNCED'
+                        ? 'bg-emerald-950/20 border-emerald-500/40'
+                        : 'bg-slate-800/50 border-slate-700/70'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                            {item.type === 'NEW_PARCEL' ? t('New Boundary Polygon') : t('Ground LARR Inspection')}
+                          </span>
+                          <span className="text-xs text-slate-300 font-bold font-mono">
+                            {item.ulpin || item.data?.ulpin || `Parcel: ${item.parcel_id || 'N/A'}`}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-slate-400 flex items-center gap-3">
+                          <span className="flex items-center gap-1">
+                            <Clock size={11} />
+                            {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          <span>•</span>
+                          <span>{item.data?.survey_number ? `Survey No: ${item.data.survey_number}` : `Village: ${item.data?.village || 'Field'}`}</span>
+                        </div>
+                      </div>
+
+                      {/* Status Tag */}
+                      <div>
+                        {item.status === 'CONFLICT' ? (
+                          <span className="px-2.5 py-1 rounded-xl text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center gap-1.5 animate-pulse">
+                            <AlertTriangle size={13} />
+                            {t('Conflict Detected')}
+                          </span>
+                        ) : item.status === 'SYNCING' ? (
+                          <span className="px-2.5 py-1 rounded-xl text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1.5">
+                            <RefreshCw size={13} className="animate-spin" />
+                            {t('Syncing...')}
+                          </span>
+                        ) : item.status === 'SYNCED' ? (
+                          <span className="px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5">
+                            <CheckCircle2 size={13} />
+                            {t('Synced')}
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                            {t('Pending Sync')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Conflict Resolution Box */}
+                    {item.status === 'CONFLICT' && (
+                      <div className="mt-3.5 pt-3.5 border-t border-rose-500/30 space-y-2.5">
+                        <div className="p-2.5 rounded-xl bg-rose-950/40 border border-rose-500/30 text-xs text-rose-200">
+                          <strong className="block font-bold text-rose-300 mb-0.5">
+                            {t('Data Conflict')}: {item.error || item.conflict_details?.reason || t('Concurrent Modification')}
+                          </strong>
+                          <span className="text-[11px] text-rose-300/80">
+                            {t('The online database was updated with administrative actions while this survey was recorded offline.')}
+                          </span>
+                        </div>
+
+                        {/* Comparative Diff Table */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                          <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-700">
+                            <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold mb-1">
+                              {t('Master Cloud Record')}
+                            </span>
+                            <div className="text-slate-300 space-y-0.5 text-[11px]">
+                              <div>Status: <strong className="text-amber-400">{item.conflict_details?.server_record?.status || 'Active'}</strong></div>
+                              <div>Owner: {item.conflict_details?.server_record?.owner_name || 'N/A'}</div>
+                              <div>Area: {item.conflict_details?.server_record?.area_ha || 'N/A'} Ha</div>
+                            </div>
+                          </div>
+                          <div className="p-2.5 rounded-xl bg-slate-900 border border-cyan-500/40">
+                            <span className="text-[10px] text-cyan-400 uppercase tracking-wider block font-bold mb-1">
+                              {t('Offline Field Survey Record')}
+                            </span>
+                            <div className="text-slate-300 space-y-0.5 text-[11px]">
+                              <div>Status: <strong className="text-emerald-400">Verified (Field GPS)</strong></div>
+                              <div>Condition: {item.data?.land_condition || 'Inspected'}</div>
+                              <div>Trees: {item.data?.trees_count || 0} | Families: {item.data?.affected_families_count || 0}</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Adjudication Buttons */}
+                        <div className="flex items-center gap-2 pt-1">
+                          <button
+                            type="button"
+                            disabled={isResolvingConflict}
+                            onClick={async () => {
+                              await handleResolveConflict('OVERRIDE_FIELD', item);
+                            }}
+                            className="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 text-xs font-bold transition flex items-center justify-center gap-1.5 shadow"
+                          >
+                            <CheckCircle2 size={14} />
+                            <span>{t('Override Cloud with Field Survey')}</span>
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isResolvingConflict}
+                            onClick={async () => {
+                              await handleResolveConflict('DISCARD_FIELD', item);
+                            }}
+                            className="py-2 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition border border-slate-700"
+                          >
+                            <span>{t('Discard Draft')}</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Non-conflict item actions */}
+                    {item.status !== 'CONFLICT' && (
+                      <div className="mt-2 flex items-center justify-end">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (window.confirm(t('Discard this offline draft?'))) {
+                              await removeOutboxItem(item.id);
+                              await refreshOutbox();
+                            }
+                          }}
+                          className="text-[11px] text-slate-500 hover:text-rose-400 transition flex items-center gap-1"
+                        >
+                          <Trash2 size={12} />
+                          <span>{t('Remove Draft')}</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-slate-800 flex items-center justify-between bg-slate-950/80 flex-wrap gap-2">
+              <span className="text-xs text-slate-500">
+                {t('Bhoomi Setu Local-First Storage (IndexedDB)')}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowOutboxModal(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition"
+                >
+                  {t('Close')}
+                </button>
+                {isOnline && outboxItems.some(i => i.status !== 'SYNCED') && (
+                  <button
+                    type="button"
+                    disabled={isSyncing}
+                    onClick={handleSyncNow}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 text-xs font-bold hover:brightness-110 flex items-center gap-1.5 transition shadow"
+                  >
+                    <RefreshCw size={13} className={isSyncing ? 'animate-spin' : ''} />
+                    <span>{isSyncing ? t('Syncing...') : t('Sync All Pending')}</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };

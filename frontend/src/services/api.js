@@ -147,6 +147,16 @@ export const submitFieldSurvey = async (payload) => {
   return res.data;
 };
 
+export const syncFieldSurveysBatch = async (items) => {
+  const res = await axios.post(`${API_BASE}/field-surveys/sync-batch`, { items });
+  return res.data;
+};
+
+export const resolveFieldConflict = async (payload) => {
+  const res = await axios.post(`${API_BASE}/field-surveys/resolve-conflict`, payload);
+  return res.data;
+};
+
 export const fetchDocuments = async (projectId) => {
   try {
     const res = await axios.get(`${API_BASE}/documents`, { params: projectId ? { project_id: projectId } : {} });
