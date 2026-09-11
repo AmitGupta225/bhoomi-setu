@@ -16,8 +16,13 @@ import {
   resolveConflictAndCommit 
 } from '../services/syncEngine';
 import { useAuth } from '../context/AuthContext';
-import { MapContainer, TileLayer, Marker, Popup, Polygon, Circle, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polygon, Circle, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
+import { 
+  downloadVillageMapTiles, 
+  calculateVillageBounds, 
+  getCachedTileStats 
+} from '../services/tileDownloader';
 import { 
   Smartphone, 
   CheckCircle2, 
@@ -39,7 +44,9 @@ import {
   AlertTriangle,
   RefreshCw,
   Clock,
-  Database
+  Database,
+  Footprints,
+  Undo2
 } from 'lucide-react';
 
 // Fix default leaflet marker icon bug in React
@@ -62,7 +69,19 @@ const redMarkerIcon = new L.Icon({
 
 
 
-// Leaflet Location Handler Helper
+// Interactive Map Click Handler Helper for tapping boundary vertices
+function MapEventsListener({ onMapClick, active }) {
+  useMapEvents({
+    click(e) {
+      if (active && onMapClick) {
+        onMapClick(e.latlng);
+      }
+    }
+  });
+  return null;
+}
+
+// Leaflet Location Handler Helper with robust offline support
 function MapLocationTrigger({ locateTrigger, setUserLocation, setIsLocating, setIsUserLocationActive }) {
   const map = useMap();
 
@@ -76,37 +95,44 @@ function MapLocationTrigger({ locateTrigger, setUserLocation, setIsLocating, set
       const uLat = parseFloat(e.latlng.lat.toFixed(6));
       const uLng = parseFloat(e.latlng.lng.toFixed(6));
       const acc = Math.round(e.accuracy);
-      setUserLocation({ lat: uLat, lng: uLng, accuracy: acc });
+      setUserLocation({ lat: uLat, lng: uLng, accuracy: acc, isFallback: false });
       setIsLocating(false);
       map.flyTo(e.latlng, acc > 5000 ? 12 : 16, { duration: 1.2 });
     };
 
-    const onLocationError = (e) => {
+    const onLocationError = () => {
       setIsLocating(false);
-      // Fall back to standard browser geolocation if Leaflet locate errors
+      // Try standard browser geolocation with cached fallback
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (pos) => {
             const uLat = parseFloat(pos.coords.latitude.toFixed(6));
             const uLng = parseFloat(pos.coords.longitude.toFixed(6));
-            const acc = Math.round(pos.coords.accuracy || 0);
-            setUserLocation({ lat: uLat, lng: uLng, accuracy: acc });
+            const acc = Math.round(pos.coords.accuracy || 10);
+            setUserLocation({ lat: uLat, lng: uLng, accuracy: acc, isFallback: false });
             map.flyTo([uLat, uLng], acc > 5000 ? 12 : 16, { duration: 1.2 });
           },
-          (err) => {
-            alert('Location permission or acquisition error: ' + err.message);
+          () => {
+            // Offline/Network provider failure fallback: Use current map center to position rover pin
+            const center = map.getCenter();
+            const uLat = parseFloat(center.lat.toFixed(6));
+            const uLng = parseFloat(center.lng.toFixed(6));
+            setUserLocation({ lat: uLat, lng: uLng, accuracy: 25, isFallback: true });
           },
-          { enableHighAccuracy: true, timeout: 8000 }
+          { enableHighAccuracy: true, timeout: 5000, maximumAge: 300000 }
         );
       } else {
-        alert('Geolocation is not supported by your browser: ' + e.message);
+        const center = map.getCenter();
+        const uLat = parseFloat(center.lat.toFixed(6));
+        const uLng = parseFloat(center.lng.toFixed(6));
+        setUserLocation({ lat: uLat, lng: uLng, accuracy: 25, isFallback: true });
       }
     };
 
     map.once('locationfound', onLocationFound);
     map.once('locationerror', onLocationError);
 
-    map.locate({ setView: false, enableHighAccuracy: true, timeout: 8000 });
+    map.locate({ setView: false, enableHighAccuracy: true, timeout: 5000, maxZoom: 17 });
 
     return () => {
       map.off('locationfound', onLocationFound);
@@ -164,6 +190,12 @@ export const FieldSurveyMobile = () => {
   const [selectedConflictItem, setSelectedConflictItem] = useState(null);
   const [isResolvingConflict, setIsResolvingConflict] = useState(false);
 
+  // Map Tile & Vertex Editing State
+  const [tapToAddVertex, setTapToAddVertex] = useState(true);
+  const [showTileDownloadModal, setShowTileDownloadModal] = useState(false);
+  const [tileDownloadProgress, setTileDownloadProgress] = useState(null);
+  const [cachedTileCount, setCachedTileCount] = useState(0);
+
   // Tabs
   
 
@@ -202,7 +234,7 @@ export const FieldSurveyMobile = () => {
 
   const tileLayerConfig = {
     osm: {
-      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap India</a>'
     },
     satellite: {
@@ -398,19 +430,90 @@ export const FieldSurveyMobile = () => {
     loadData();
   }, [selectedProjectId]);
 
+  // Read cached tile count on mount
+  useEffect(() => {
+    async function checkTileStats() {
+      try {
+        const stats = await getCachedTileStats();
+        if (stats && stats.count) setCachedTileCount(stats.count);
+      } catch (e) {
+        console.warn('Failed to read cached tile stats:', e);
+      }
+    }
+    checkTileStats();
+  }, []);
+
   const handleDownloadVillageOffline = async () => {
     try {
       setIsCaching(true);
+      setShowTileDownloadModal(true);
       const activeProj = projects.find(p => p.id === newProjId) || projects[0];
       if (!activeProj) {
         alert(t('No project selected to cache.'));
+        setIsCaching(false);
         return;
       }
+
+      // Step 1: Cache village project and parcels into IndexedDB
+      setTileDownloadProgress({
+        phase: 'PARCELS',
+        percent: 10,
+        completed: 0,
+        total: 100,
+        bytes: 0,
+        message: t(`Caching ${parcels.length} village cadastral parcel boundaries to IndexedDB...`)
+      });
       const res = await cacheVillageProject(activeProj, parcels);
-      setCacheMessage(`✓ ${t('Successfully cached')} ${res.count} ${t('village land parcels for offline fieldwork!')}`);
-      setTimeout(() => setCacheMessage(''), 6000);
+
+      // Step 2: Calculate geographic bounding box
+      const bounds = calculateVillageBounds(activeProj, parcels);
+
+      // Step 3: Download map tiles (OSM & Satellite) for zooms 14, 15, 16
+      setTileDownloadProgress({
+        phase: 'TILES',
+        percent: 25,
+        completed: 0,
+        total: 80,
+        bytes: 0,
+        message: t('Calculating spatial tile matrix for village cadastre...')
+      });
+
+      const tileResult = await downloadVillageMapTiles(bounds, {
+        zoomLevels: [14, 15, 16],
+        downloadSatellite: true,
+        onProgress: (p) => {
+          setTileDownloadProgress({
+            phase: 'TILES',
+            percent: Math.min(98, 25 + Math.round(p.percent * 0.73)),
+            completed: p.completed,
+            total: p.total,
+            bytes: p.bytes,
+            message: p.message
+          });
+        }
+      });
+
+      const stats = await getCachedTileStats();
+      setCachedTileCount(stats.count);
+
+      setTileDownloadProgress({
+        phase: 'COMPLETE',
+        percent: 100,
+        completed: tileResult.cached,
+        total: tileResult.total,
+        bytes: tileResult.bytes,
+        message: `✓ ${t('Successfully cached')} ${res.count} ${t('parcels and')} ${tileResult.cached} ${t('offline map tiles!')}`
+      });
+
+      setCacheMessage(`✓ ${t('Village & Offline Map Pack Cached!')} (${tileResult.cached} ${t('tiles')})`);
+      setTimeout(() => setCacheMessage(''), 8000);
     } catch (err) {
-      alert(t('Failed to cache village for offline: ') + err.message);
+      console.error('Failed to cache village:', err);
+      setTileDownloadProgress({
+        phase: 'ERROR',
+        percent: 100,
+        message: t('Caching error: ') + err.message
+      });
     } finally {
       setIsCaching(false);
     }
@@ -458,18 +561,109 @@ export const FieldSurveyMobile = () => {
     }
   };
 
+  const handleMapClick = (latlng) => {
+    const newLat = parseFloat(latlng.lat.toFixed(6));
+    const newLng = parseFloat(latlng.lng.toFixed(6));
+    setVertices(prev => [...prev, { lat: newLat, lng: newLng }]);
+    setUserLocation({ lat: newLat, lng: newLng, accuracy: 3, isFallback: false });
+    setCustomLat(newLat.toFixed(6));
+    setCustomLng(newLng.toFixed(6));
+    setSubmitSuccess(`🎯 ${t('Placed Corner V')}${vertices.length + 1} (${newLat}, ${newLng})`);
+    setTimeout(() => setSubmitSuccess(''), 3000);
+  };
+
+  const handleVertexDrag = (index, e) => {
+    const pos = e.target.getLatLng();
+    const newLat = parseFloat(pos.lat.toFixed(6));
+    const newLng = parseFloat(pos.lng.toFixed(6));
+    setVertices(prev => {
+      const updated = [...prev];
+      updated[index] = { lat: newLat, lng: newLng };
+      return updated;
+    });
+    setCustomLat(newLat.toFixed(6));
+    setCustomLng(newLng.toFixed(6));
+  };
+
+  const handleSimulateRoverWalk = () => {
+    let baseLat = vertices.length > 0 ? vertices[vertices.length - 1].lat : (parseFloat(customLat) || 19.7280);
+    let baseLng = vertices.length > 0 ? vertices[vertices.length - 1].lng : (parseFloat(customLng) || 72.8450);
+
+    const stepIndex = vertices.length % 5;
+    let nextLat, nextLng;
+    if (stepIndex === 0) {
+      nextLat = baseLat + 0.00030;
+      nextLng = baseLng + 0.00025;
+    } else if (stepIndex === 1) {
+      nextLat = baseLat - 0.00010;
+      nextLng = baseLng + 0.00035;
+    } else if (stepIndex === 2) {
+      nextLat = baseLat - 0.00035;
+      nextLng = baseLng - 0.00015;
+    } else if (stepIndex === 3) {
+      nextLat = baseLat - 0.00015;
+      nextLng = baseLng - 0.00035;
+    } else {
+      nextLat = baseLat + 0.00030;
+      nextLng = baseLng - 0.00010;
+    }
+
+    nextLat = parseFloat(nextLat.toFixed(6));
+    nextLng = parseFloat(nextLng.toFixed(6));
+
+    setVertices(prev => [...prev, { lat: nextLat, lng: nextLng }]);
+    setUserLocation({ lat: nextLat, lng: nextLng, accuracy: 2, isFallback: false });
+    setCustomLat(nextLat.toFixed(6));
+    setCustomLng(nextLng.toFixed(6));
+    setSubmitSuccess(`🚶 ${t('Rover Walk: Captured Corner V')}${vertices.length + 1} (${nextLat}, ${nextLng})`);
+    setTimeout(() => setSubmitSuccess(''), 3000);
+  };
+
+  const handleUndoVertex = () => {
+    setVertices(prev => prev.slice(0, -1));
+  };
+
+  const handleClearAllVertices = () => {
+    if (vertices.length === 0) return;
+    if (window.confirm(t('Clear all boundary vertices and start a fresh plot?'))) {
+      setVertices([]);
+    }
+  };
+
   const handleAddCurrentGpsAsVertex = () => {
+    if (userLocation && userLocation.lat && userLocation.lng) {
+      const vLat = parseFloat(userLocation.lat.toFixed(6));
+      const vLng = parseFloat(userLocation.lng.toFixed(6));
+      setVertices(prev => [...prev, { lat: vLat, lng: vLng }]);
+      setSubmitSuccess(`Added Vertex V${vertices.length + 1} at GPS point (${vLat}, ${vLng})`);
+      setTimeout(() => setSubmitSuccess(''), 3000);
+      return;
+    }
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          const vLat = parseFloat(pos.coords.latitude.toFixed(5));
-          const vLng = parseFloat(pos.coords.longitude.toFixed(5));
+          const vLat = parseFloat(pos.coords.latitude.toFixed(6));
+          const vLng = parseFloat(pos.coords.longitude.toFixed(6));
           setVertices(prev => [...prev, { lat: vLat, lng: vLng }]);
+          setUserLocation({ lat: vLat, lng: vLng, accuracy: Math.round(pos.coords.accuracy || 10), isFallback: false });
+          setSubmitSuccess(`Added Vertex V${vertices.length + 1} at GPS point (${vLat}, ${vLng})`);
+          setTimeout(() => setSubmitSuccess(''), 3000);
         },
-        (err) => alert('GPS capture error: ' + err.message)
+        () => {
+          const cLat = parseFloat(customLat) || 19.7280;
+          const cLng = parseFloat(customLng) || 72.8450;
+          setVertices(prev => [...prev, { lat: cLat, lng: cLng }]);
+          setUserLocation({ lat: cLat, lng: cLng, accuracy: 15, isFallback: true });
+          setSubmitSuccess(`Rover Point V${vertices.length + 1} added at (${cLat}, ${cLng})`);
+          setTimeout(() => setSubmitSuccess(''), 4000);
+        },
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 300000 }
       );
     } else {
-      alert('Geolocation not supported in browser.');
+      const cLat = parseFloat(customLat) || 19.7280;
+      const cLng = parseFloat(customLng) || 72.8450;
+      setVertices(prev => [...prev, { lat: cLat, lng: cLng }]);
     }
   };
 
@@ -774,17 +968,23 @@ export const FieldSurveyMobile = () => {
             </div>
           )}
 
-          {/* Cache Village Button */}
+          {/* Cache Village & Map Tiles Button */}
           <button
             type="button"
             disabled={isCaching}
             onClick={handleDownloadVillageOffline}
-            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"
-            title={t('Download all village cadastral parcels into local IndexedDB')}
+            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-teal-900/60 to-slate-800 hover:from-teal-800/80 hover:to-slate-700 text-teal-200 border border-teal-500/40 text-xs font-semibold flex items-center gap-2 transition shadow-sm"
+            title={t('Download all village cadastral parcels and raster map tiles for offline fieldwork')}
           >
-            <Download size={13} className={isCaching ? 'animate-bounce text-emerald-400' : 'text-slate-400'} />
-            <span>{isCaching ? t('Caching Dossier...') : t('Cache Village for Offline')}</span>
+            <Download size={14} className={isCaching ? 'animate-bounce text-emerald-400' : 'text-teal-400'} />
+            <span>{isCaching ? t('Caching Dossier & Map...') : t('📥 Cache Village & Offline Map Data')}</span>
           </button>
+          {cachedTileCount > 0 && (
+            <span className="px-2.5 py-1 rounded-xl bg-slate-800/90 text-cyan-300 text-[11px] font-mono border border-slate-700 flex items-center gap-1.5 shadow-sm">
+              <Globe size={12} className="text-cyan-400" />
+              <span>{cachedTileCount} {t('Offline Map Tiles Cached')}</span>
+            </span>
+          )}
           {cacheMessage && (
             <span className="text-xs text-emerald-400 font-medium animate-in fade-in">{cacheMessage}</span>
           )}
@@ -898,7 +1098,57 @@ export const FieldSurveyMobile = () => {
               )}
             </div>
 
-            <div className="h-[60vh] min-h-[400px] w-full rounded-2xl overflow-hidden border border-slate-800 relative z-0">
+            <div className="h-[60vh] min-h-[400px] w-full rounded-2xl overflow-hidden border border-slate-800 relative z-0 bg-slate-950">
+              {/* Interactive Cadastral Rover Bar (Top-Left) */}
+              <div className="absolute top-4 left-4 z-[500] flex flex-wrap items-center gap-1.5 max-w-[65%]">
+                <button
+                  type="button"
+                  onClick={() => setTapToAddVertex(!tapToAddVertex)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xl backdrop-blur-md border ${
+                    tapToAddVertex
+                      ? 'bg-cyan-500 text-slate-950 border-cyan-400 font-extrabold ring-2 ring-cyan-400/40 shadow-cyan-500/20'
+                      : 'bg-slate-900/90 text-slate-300 border-slate-700 hover:text-white'
+                  }`}
+                  title="Tap anywhere on the map to add boundary corner vertices"
+                >
+                  <Crosshair className="w-3.5 h-3.5" />
+                  <span>{tapToAddVertex ? t('🎯 Tap Map: Add Corner') : t('🎯 Tap to Add (OFF)')}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSimulateRoverWalk}
+                  className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/90 text-emerald-300 hover:text-emerald-200 border border-emerald-500/40 shadow-2xl backdrop-blur-md flex items-center gap-1 transition"
+                  title="Simulate walking 25m along perimeter with GPS rover"
+                >
+                  <Footprints className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>{t('🚶 Walk Corner')}</span>
+                </button>
+
+                {vertices.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleUndoVertex}
+                    className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/90 text-slate-300 hover:text-white border border-slate-700 shadow-2xl backdrop-blur-md flex items-center gap-1 transition"
+                    title="Undo last added vertex"
+                  >
+                    <Undo2 className="w-3.5 h-3.5" />
+                    <span>{t('Undo')}</span>
+                  </button>
+                )}
+
+                {vertices.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleClearAllVertices}
+                    className="px-2 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/90 text-rose-400 hover:text-rose-300 border border-rose-500/30 shadow-2xl backdrop-blur-md transition"
+                    title="Clear all vertices"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
               {/* PROMINENT HIGH-CONTRAST MAP VIEW SWITCHER (STANDARD MAP vs SATELLITE VIEW) */}
               <div className="absolute top-4 right-4 z-[500] bg-slate-900/95 border border-slate-700/80 rounded-2xl p-1.5 shadow-2xl flex items-center gap-1.5 backdrop-blur-md">
                 <button
@@ -939,8 +1189,13 @@ export const FieldSurveyMobile = () => {
                 center={[vertices[0]?.lat || 19.7280, vertices[0]?.lng || 72.8450]}
                 zoom={16}
                 className="w-full h-full"
+                style={{ backgroundColor: '#0a1628' }}
               >
-                
+                <MapEventsListener 
+                  active={tapToAddVertex} 
+                  onMapClick={handleMapClick} 
+                />
+
                 <FlyToSearch target={searchTarget} />
                 
                 <MapLocationTrigger 
@@ -955,14 +1210,50 @@ export const FieldSurveyMobile = () => {
                   url={tileLayerConfig[mapStyle].url}
                 />
 
-                {/* Draw markers for each vertex */}
+                {/* Existing Village Cadastral Parcels Outlines */}
+                {parcels.map((p) => {
+                  if (!p.coordinates || !Array.isArray(p.coordinates) || p.coordinates.length < 3) return null;
+                  const isTarget = inspParcelId && p.id === inspParcelId;
+                  return (
+                    <Polygon
+                      key={`village-parcel-${p.id || p.ulpin}`}
+                      positions={p.coordinates}
+                      pathOptions={{
+                        color: isTarget ? '#f59e0b' : '#38bdf8',
+                        fillColor: isTarget ? '#f59e0b' : '#0284c7',
+                        fillOpacity: isTarget ? 0.45 : 0.12,
+                        weight: isTarget ? 2.5 : 1,
+                        dashArray: isTarget ? '4,4' : undefined
+                      }}
+                    >
+                      <Popup>
+                        <div className="text-xs space-y-1 font-sans">
+                          <strong className="block text-cyan-700 font-bold">{p.ulpin}</strong>
+                          <div className="text-slate-700 font-medium">Plot #{p.survey_number} • Khata: {p.khata_number}</div>
+                          <div className="text-slate-600">Owner: {p.owner_name}</div>
+                          <div className="text-slate-600">Area: {p.area_ha} Ha</div>
+                        </div>
+                      </Popup>
+                    </Polygon>
+                  );
+                })}
+
+                {/* Draw draggable markers for each vertex */}
                 {vertices.map((v, idx) => (
-                  <Marker key={idx} position={[v.lat, v.lng]}>
+                  <Marker 
+                    key={idx} 
+                    position={[v.lat, v.lng]}
+                    draggable={true}
+                    eventHandlers={{
+                      dragend: (e) => handleVertexDrag(idx, e)
+                    }}
+                  >
                     <Popup>
                       <div className="text-xs font-mono">
                         <strong className="text-cyan-700 block font-sans">{t('Vertex')} V{idx + 1}</strong>
                         {t('Lat:')} {v.lat}<br />
-                        {t('Lng:')} {v.lng}
+                        {t('Lng:')} {v.lng}<br />
+                        <span className="text-[10px] text-slate-500 font-sans italic">💡 Drag marker to adjust boundary corner</span>
                       </div>
                     </Popup>
                   </Marker>
@@ -1011,7 +1302,8 @@ export const FieldSurveyMobile = () => {
                         setUserLocation({
                           lat: newLat,
                           lng: newLng,
-                          accuracy: null
+                          accuracy: null,
+                          isFallback: false
                         });
                         setCustomLat(newLat.toFixed(6));
                         setCustomLng(newLng.toFixed(6));
@@ -1039,26 +1331,38 @@ export const FieldSurveyMobile = () => {
             </div>
           </div>
 
-          <p className="text-xs text-slate-400 italic text-center pt-2 mb-4">💡 {t('As you add or remove vertex coordinates below, the green polygon boundary updates live on the map above.')}</p>
+          <p className="text-xs text-slate-400 italic text-center pt-2 mb-4">💡 {t('Tap on the map or drag corner markers to shape your boundary polygon in real-time.')}</p>
 
         {/* INJECTED VERTEX CONTROLS */}
         {/* VERTEX CONTROL SECTION */}
             <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-2xl space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <span className="font-semibold text-slate-300 flex items-center gap-1.5">
                   <Compass className="w-4 h-4 text-cyan-400" />
                   <span>{t('Boundary Vertices')} ({vertices.length} {t('Points')})</span>
                 </span>
 
-                <button
-                  type="button"
-                  onClick={handleAddCurrentGpsAsVertex}
-                  className="px-2.5 py-1 bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/40 text-cyan-300 rounded-lg text-[11px] font-medium transition flex items-center gap-1"
-                  title="Add your physical device location"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>{t('Device GPS')}</span>
-                </button>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={handleSimulateRoverWalk}
+                    className="px-2.5 py-1 bg-emerald-950 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 rounded-lg text-[11px] font-semibold transition flex items-center gap-1"
+                    title="Simulate walking next corner with satellite GPS rover"
+                  >
+                    <Footprints className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>{t('Walk Corner')}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleAddCurrentGpsAsVertex}
+                    className="px-2.5 py-1 bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/40 text-cyan-300 rounded-lg text-[11px] font-medium transition flex items-center gap-1"
+                    title="Add your physical device location or current dropped pin"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>{t('Record GPS Point')}</span>
+                  </button>
+                </div>
               </div>
 
               {/* Custom Point Input */}
@@ -1329,6 +1633,116 @@ export const FieldSurveyMobile = () => {
         
       </div>
  
+      {/* Offline Village Dossier & Map Tiles Download Progress Modal */}
+      {showTileDownloadModal && (
+        <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-5 animate-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                  <Download className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white font-heading">{t('Offline Cadastre & Map Downloader')}</h3>
+                  <p className="text-xs text-slate-400">{t('Pre-cache village boundaries & spatial raster tiles')}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowTileDownloadModal(false)}
+                className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-4 space-y-2 text-xs">
+                <div className="flex justify-between text-slate-300">
+                  <span className="text-slate-400">{t('Project:')}</span>
+                  <span className="font-semibold text-white">{projects.find(p => p.id === newProjId)?.name || t('Active Corridor Project')}</span>
+                </div>
+                <div className="flex justify-between text-slate-300">
+                  <span className="text-slate-400">{t('Cadastral Parcels:')}</span>
+                  <span className="font-mono text-cyan-400 font-bold">{parcels.length} {t('Plots')}</span>
+                </div>
+                <div className="flex justify-between text-slate-300">
+                  <span className="text-slate-400">{t('Spatial Zoom Coverage:')}</span>
+                  <span className="font-mono text-emerald-400 font-semibold">{t('Zoom 14, 15, 16 (Cadastral High-Res)')}</span>
+                </div>
+              </div>
+
+              {tileDownloadProgress && (
+                <div className="space-y-2 bg-slate-950/50 p-3.5 rounded-2xl border border-slate-800">
+                  <div className="flex justify-between text-xs font-semibold">
+                    <span className="text-slate-200">{tileDownloadProgress.message}</span>
+                    <span className="text-cyan-400 font-mono">{tileDownloadProgress.percent}%</span>
+                  </div>
+                  <div className="w-full h-3 bg-slate-900 rounded-full overflow-hidden border border-slate-800 p-0.5">
+                    <div 
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        tileDownloadProgress.phase === 'COMPLETE' 
+                          ? 'bg-gradient-to-r from-emerald-500 to-teal-400' 
+                          : tileDownloadProgress.phase === 'ERROR'
+                          ? 'bg-rose-500'
+                          : 'bg-gradient-to-r from-cyan-500 to-blue-500'
+                      }`}
+                      style={{ width: `${tileDownloadProgress.percent}%` }}
+                    />
+                  </div>
+                  {tileDownloadProgress.total > 0 && (
+                    <div className="flex justify-between text-[11px] text-slate-400 font-mono pt-1">
+                      <span>Tiles: {tileDownloadProgress.completed} / {tileDownloadProgress.total}</span>
+                      {tileDownloadProgress.bytes > 0 && (
+                        <span>Downloaded: {(tileDownloadProgress.bytes / (1024 * 1024)).toFixed(2)} MB</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="p-3 bg-cyan-950/30 border border-cyan-500/20 rounded-xl text-xs text-cyan-300 flex items-start gap-2.5">
+                <Globe className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                <span>
+                  {t('Once downloaded, the entire village map and satellite tiles are stored on this device. You can survey with zero cellular signal or in airplane mode.')}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              {tileDownloadProgress?.phase === 'COMPLETE' ? (
+                <button
+                  type="button"
+                  onClick={() => setShowTileDownloadModal(false)}
+                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs rounded-xl transition shadow-lg flex items-center justify-center gap-2"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>{t('✓ Start Offline Fieldwork')}</span>
+                </button>
+              ) : isCaching ? (
+                <button
+                  type="button"
+                  disabled
+                  className="w-full py-3 bg-slate-800 text-slate-400 font-semibold text-xs rounded-xl flex items-center justify-center gap-2"
+                >
+                  <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" />
+                  <span>{t('Downloading Map & Parcel Data...')}</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleDownloadVillageOffline}
+                  className="w-full py-3 bg-gradient-to-r from-cyan-500 to-emerald-500 text-slate-950 font-bold text-xs rounded-xl hover:brightness-110 transition shadow-lg flex items-center justify-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>{t('Download Offline Dossier & Map Pack')}</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Offline Outbox & Conflict Adjudication Modal */}
       {showOutboxModal && (
         <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in">

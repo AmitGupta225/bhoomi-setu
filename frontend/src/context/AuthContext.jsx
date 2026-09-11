@@ -388,16 +388,24 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const activeRole = user ? user.role : ROLES.CITIZEN;
+  const activeRole = user && user.role && typeof user.role === 'object' && user.role.allowedTabs 
+    ? user.role 
+    : (ROLES[user?.roleKey] || ROLES[user?.role?.toUpperCase?.()] || ROLES.CITIZEN);
 
   const isTabAllowed = (tabId) => {
     if (!user) return false;
-    return user.role.allowedTabs.includes(tabId);
+    const roleObj = user.role && typeof user.role === 'object' && user.role.allowedTabs 
+      ? user.role 
+      : (ROLES[user.roleKey] || ROLES[user.role?.toUpperCase?.()] || ROLES.CITIZEN);
+    return Boolean(roleObj?.allowedTabs?.includes(tabId));
   };
 
   const isStepAuthorized = (stepNum) => {
     if (!user) return false;
-    return user.role.authorizedSteps.includes(stepNum);
+    const roleObj = user.role && typeof user.role === 'object' && user.role.authorizedSteps 
+      ? user.role 
+      : (ROLES[user.roleKey] || ROLES[user.role?.toUpperCase?.()] || ROLES.CITIZEN);
+    return Boolean(roleObj?.authorizedSteps?.includes(stepNum));
   };
 
   return (

@@ -68,22 +68,52 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+const FALLBACK_GRID_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <rect width="256" height="256" fill="#0a1628" stroke="#1e293b" stroke-width="1"/>
+  <path d="M 0 64 L 256 64 M 0 128 L 256 128 M 0 192 L 256 192 M 64 0 L 64 256 M 128 0 L 128 256 M 192 0 L 192 256" stroke="#1e3a5f" stroke-width="0.75" stroke-dasharray="3,3"/>
+  <circle cx="128" cy="128" r="3" fill="#0ea5e9" opacity="0.8"/>
+  <text x="128" y="136" font-family="system-ui, sans-serif" font-size="8" fill="#64748b" text-anchor="middle" font-weight="700">OFFLINE CADASTRE</text>
+  <text x="128" y="150" font-family="monospace" font-size="7" fill="#38bdf8" text-anchor="middle">SPATIAL GRID</text>
+</svg>`;
+
   // Map Tiles (OpenStreetMap / Carto / Esri): Cache-First with Network fallback
   if (url.hostname.includes('tile.openstreetmap') || url.hostname.includes('basemaps.cartocdn') || url.hostname.includes('arcgisonline')) {
     event.respondWith(
-      caches.match(request).then((cachedResponse) => {
-        if (cachedResponse) return cachedResponse;
-        return fetch(request).then((networkResponse) => {
+      (async () => {
+        const cache = await caches.open(CACHE_NAME);
+        
+        // 1. Check exact match
+        let cachedResponse = await cache.match(request);
+        
+        // 2. If OSM tile, try matching canonical URL (handles a., b., c. rotation)
+        if (!cachedResponse && url.hostname.includes('tile.openstreetmap')) {
+          const canonicalUrl = `https://tile.openstreetmap.org${url.pathname}`;
+          cachedResponse = await cache.match(canonicalUrl);
+        }
+
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+
+        // 3. Try fetching from network
+        try {
+          const networkResponse = await fetch(request);
           if (networkResponse && networkResponse.status === 200) {
             const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+            cache.put(request, clone);
           }
           return networkResponse;
-        }).catch(() => {
-          // Return transparent 1x1 png or fallback if tile unavailable
-          return new Response('', { status: 200, headers: { 'Content-Type': 'image/png' } });
-        });
-      })
+        } catch (err) {
+          // 4. Return clean, high-contrast Cadastral Grid SVG tile so screen NEVER goes black
+          return new Response(FALLBACK_GRID_SVG, {
+            status: 200,
+            headers: {
+              'Content-Type': 'image/svg+xml',
+              'Cache-Control': 'public, max-age=86400'
+            }
+          });
+        }
+      })()
     );
     return;
   }
