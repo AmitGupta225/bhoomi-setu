@@ -41,8 +41,10 @@ export function MainLayout() {
     activeRole,
     isMobileMenuOpen,
     setIsMobileMenuOpen,
+    theme,
     t
   } = useAuth();
+  const isDark = theme === 'dark';
 
   React.useEffect(() => {
     window.__setActiveTab = setActiveTab;
@@ -101,12 +103,12 @@ export function MainLayout() {
   ].filter(item => isTabAllowed(item.id));
 
   return (
-    <div className="h-screen bg-slate-950 text-slate-100 flex flex-col font-sans max-w-full overflow-hidden relative">
+    <div className={`h-screen flex flex-col font-sans max-w-full overflow-hidden relative ${isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-800'}`}>
       {/* Colorful Background Gradients matching the Portal Theme */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] bg-emerald-900/20 blur-[120px] rounded-full"></div>
-        <div className="absolute bottom-[10%] -right-[10%] w-[40%] h-[60%] bg-cyan-900/10 blur-[100px] rounded-full"></div>
-        <div className="absolute top-[40%] left-[30%] w-[30%] h-[30%] bg-teal-900/10 blur-[100px] rounded-full"></div>
+        <div className={`absolute -top-[20%] -left-[10%] w-[50%] h-[50%] blur-[120px] rounded-full ${isDark ? 'bg-emerald-900/20' : 'bg-emerald-200/40'}`}></div>
+        <div className={`absolute bottom-[10%] -right-[10%] w-[40%] h-[60%] blur-[100px] rounded-full ${isDark ? 'bg-cyan-900/10' : 'bg-cyan-200/30'}`}></div>
+        <div className={`absolute top-[40%] left-[30%] w-[30%] h-[30%] blur-[100px] rounded-full ${isDark ? 'bg-teal-900/10' : 'bg-teal-200/30'}`}></div>
       </div>
 
       <div className="relative z-10 flex flex-col h-full w-full">
@@ -126,7 +128,9 @@ export function MainLayout() {
         </div>
 
         {/* ── Mobile Bottom Quick Navigation Bar (md:hidden) ────────── */}
-        <nav className="md:hidden fixed bottom-0 inset-x-0 bg-slate-900/95 backdrop-blur-lg border-t border-slate-800 z-40 px-2 py-1.5 flex items-center justify-around shadow-2xl">
+        <nav className={`md:hidden fixed bottom-0 inset-x-0 backdrop-blur-lg border-t z-40 px-2 py-1.5 flex items-center justify-around shadow-2xl transition-colors ${
+          isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200 shadow-slate-300'
+        }`}>
           {bottomBarItems.map(item => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -136,11 +140,11 @@ export function MainLayout() {
                 onClick={() => setActiveTab(item.id)}
                 className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition ${
                   isActive 
-                    ? 'text-emerald-400 font-bold' 
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? (isDark ? 'text-emerald-400 font-bold' : 'text-emerald-600 font-bold')
+                    : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800')
                 }`}
               >
-                <Icon size={18} className={isActive ? 'text-emerald-400' : 'text-slate-400'} />
+                <Icon size={18} className={isActive ? (isDark ? 'text-emerald-400' : 'text-emerald-600') : (isDark ? 'text-slate-400' : 'text-slate-500')} />
                 <span className="text-[10px] leading-tight">{t(item.label)}</span>
               </button>
             );
@@ -149,9 +153,11 @@ export function MainLayout() {
           {/* "More / Menu" button toggles full mobile drawer */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-slate-400 hover:text-white transition"
+            className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition ${
+              isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
+            }`}
           >
-            <Menu size={18} className="text-slate-400" />
+            <Menu size={18} className={isDark ? 'text-slate-400' : 'text-slate-500'} />
             <span className="text-[10px] leading-tight">{t('More')}</span>
           </button>
         </nav>

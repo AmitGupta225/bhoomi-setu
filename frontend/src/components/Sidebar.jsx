@@ -14,11 +14,15 @@ import {
   MessageSquare,
   ChevronLeft,
   ChevronRight,
+  LogOut,
   X
 } from 'lucide-react';
 
 export const Sidebar = () => {
   const { 
+    user,
+    logout,
+    theme,
     activeRole, 
     activeTab, 
     setActiveTab, 
@@ -27,6 +31,7 @@ export const Sidebar = () => {
     setIsMobileMenuOpen, 
     t 
   } = useAuth();
+  const isDark = theme === 'dark';
   const [isCollapsed, setIsCollapsed] = React.useState(false);
 
   const allNavItems = [
@@ -100,7 +105,7 @@ export const Sidebar = () => {
 
       {/* ── Mobile Slide-Over Drawer (visible when isMobileMenuOpen on < md) ── */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-[10000] md:hidden">
+        <div className="fixed inset-0 z-[999999] md:hidden">
           {/* Backdrop Overlay */}
           <div 
             className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"
@@ -108,24 +113,32 @@ export const Sidebar = () => {
           />
 
           {/* Drawer Content */}
-          <div className="fixed inset-y-0 left-0 w-72 max-w-[85vw] bg-slate-900 border-r border-slate-800 p-4 flex flex-col justify-between shadow-2xl animate-in slide-in-from-left duration-200">
-            <div>
+          <div className={`fixed inset-y-0 left-0 w-72 max-w-[85vw] border-r p-4 flex flex-col justify-between shadow-2xl animate-in slide-in-from-left duration-200 z-[1000000] ${
+            isDark ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-slate-200 text-slate-800'
+          }`}>
+            <div className="flex flex-col flex-1 min-h-0">
               {/* Drawer Top Header */}
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+              <div className={`flex items-center justify-between pb-3 border-b mb-3 shrink-0 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
-                    <span className="font-black text-emerald-400 text-xs">BS</span>
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 shadow-sm shrink-0">
+                    <div className="w-full h-full bg-slate-950 rounded-[6px] flex items-center justify-center">
+                      <span className="font-black text-emerald-400 text-xs">BS</span>
+                    </div>
                   </div>
                   <div>
-                    <div className="font-extrabold text-sm text-white leading-tight">{t('BHOOMI')} <span className="text-emerald-400">{t('SETU')}</span></div>
-                    <div className="text-[10px] text-slate-400">{t(activeRole.badge)}</div>
+                    <div className={`font-extrabold text-sm leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                      {t('BHOOMI')} <span className="text-emerald-500">{t('SETU')}</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-medium">{t(activeRole.badge)}</div>
                   </div>
                 </div>
 
                 <button
                   type="button"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
+                  className={`p-1.5 rounded-lg transition ${
+                    isDark ? 'bg-slate-800 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-600 hover:text-slate-900'
+                  }`}
                   aria-label="Close Navigation"
                 >
                   <X size={18} />
@@ -133,7 +146,7 @@ export const Sidebar = () => {
               </div>
 
               {/* Navigation Links */}
-              <div className="space-y-1.5 max-h-[calc(100vh-160px)] overflow-y-auto custom-scrollbar pr-1">
+              <div className="space-y-1.5 overflow-y-auto flex-1 custom-scrollbar pr-1 py-1">
                 {roleNavItems.map(item => {
                   const Icon = item.icon;
                   const isActive = activeTab === item.id;
@@ -146,10 +159,12 @@ export const Sidebar = () => {
                       className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
                         isActive 
                           ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-slate-950 font-bold shadow-md shadow-emerald-950/30' 
-                          : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
+                          : isDark
+                          ? 'text-slate-300 hover:text-white hover:bg-slate-800/80'
+                          : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
                       }`}
                     >
-                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-slate-950' : 'text-emerald-400'}`} />
+                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-slate-950' : 'text-emerald-500'}`} />
                       <span className="truncate">{t(item.label)}</span>
                     </button>
                   );
@@ -157,10 +172,44 @@ export const Sidebar = () => {
               </div>
             </div>
 
-            {/* Bottom Footer in Mobile Drawer */}
-            <div className="pt-3 border-t border-slate-800/80 text-center">
-              <p className="text-[10px] text-slate-500">
-                Digital India • NIC • MoRD
+            {/* Bottom Section: User Profile & Sign Out in Drawer */}
+            <div className={`pt-3 border-t space-y-2.5 shrink-0 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+              {user && (
+                <div className={`flex items-center gap-2.5 p-2.5 rounded-xl border ${
+                  isDark ? 'bg-slate-800/60 border-slate-700/60' : 'bg-slate-50 border-slate-200'
+                }`}>
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 font-extrabold flex items-center justify-center text-xs shrink-0 border border-emerald-500/30">
+                    {user?.name ? user.name.charAt(0) : 'U'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-xs font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                      {user?.name}
+                    </div>
+                    <div className="text-[10px] text-emerald-500 font-medium truncate">
+                      {t(activeRole.badge)}
+                    </div>
+                    <div className="text-[9.5px] text-slate-400 truncate font-mono">
+                      {user?.email}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Full-width Sign Out Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  logout();
+                }}
+                className="w-full py-2.5 px-4 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 active:bg-rose-500/35 text-rose-400 hover:text-rose-300 border border-rose-500/35 hover:border-rose-500/60 font-extrabold text-xs flex items-center justify-center gap-2 transition shadow-sm active:scale-95"
+              >
+                <LogOut size={16} />
+                <span>{t('Sign Out')}</span>
+              </button>
+
+              <p className="text-[10px] text-slate-500 text-center">
+                BHOOMI SETU • Digital India • NIC
               </p>
             </div>
           </div>

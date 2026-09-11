@@ -39,21 +39,24 @@ export const LanguageSelector = ({ variant = 'default' }) => {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 flex items-center gap-2 border ${
+        className={`px-1.5 sm:px-2.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-xs font-semibold transition-all duration-150 flex items-center gap-1 sm:gap-1.5 border shrink-0 ${
           isDark
             ? 'bg-slate-800/80 hover:bg-slate-700/80 border-slate-700/80 text-slate-200 hover:text-white shadow-sm'
             : 'bg-white hover:bg-slate-50 border-slate-300 text-slate-700 hover:text-slate-900 shadow-sm'
         }`}
         title="Select Language / भाषा चुनें"
       >
-        <Globe size={14} className={isDark ? 'text-teal-400 shrink-0' : 'text-emerald-600 shrink-0'} />
-        <span className="font-bold">{currentLang.native}</span>
+        <Globe size={13} className={isDark ? 'text-teal-400 shrink-0' : 'text-emerald-600 shrink-0'} />
+        {/* Compact 2-letter language code on small mobile screens */}
+        <span className="font-extrabold sm:hidden text-[10.5px] tracking-tight uppercase">{currentLang.code}</span>
+        {/* Full native name on sm+ screens */}
+        <span className="font-bold hidden sm:inline text-xs">{currentLang.native}</span>
         {!isCompact && (
-          <span className={`text-[10px] hidden sm:inline ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+          <span className={`text-[10px] hidden md:inline ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
             ({currentLang.name})
           </span>
         )}
-        <ChevronDown size={12} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown size={10} className={`transition-transform duration-200 opacity-70 shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
