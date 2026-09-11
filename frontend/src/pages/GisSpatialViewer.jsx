@@ -11,7 +11,8 @@ import {
   Globe,
   Layers,
   Crosshair,
-  Clock
+  Clock,
+  X
 } from 'lucide-react';
 
 // Fix default leaflet marker icon bug in React (Blue Marker)
@@ -31,6 +32,17 @@ const redMarkerIcon = new L.Icon({
   popupAnchor: [1, -34],
   shadowSize: [41, 41]
 });
+
+// Fly to searched location helper
+function FlyToSearch({ target }) {
+  const map = useMap();
+  useEffect(() => {
+    if (target && target.lat && target.lng) {
+      map.setView([target.lat, target.lng], 16, { animate: true, duration: 1 });
+    }
+  }, [target, map]);
+  return null;
+}
 
 
 
@@ -117,6 +129,14 @@ export const GisSpatialViewer = () => {
   const [parcelLogs, setParcelLogs] = useState([]);
   const [isLocating, setIsLocating] = useState(false);
   const [isUserLocationActive, setIsUserLocationActive] = useState(false);
+
+  // Location search state (same as Field Map)
+  const [locationQuery, setLocationQuery] = useState('');
+  const [locationSuggestions, setLocationSuggestions] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchTarget, setSearchTarget] = useState(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchDebounceRef = React.useRef(null);
   
   // Bulletproof map instance and bounds tracking
   const [mapInstance, setMapInstance] = useState(null);
@@ -244,6 +264,82 @@ export const GisSpatialViewer = () => {
       setSelectedParcel(match);
     } else {
       alert(`No parcel found matching ULPIN "${searchUlpin}".`);
+    }
+  };
+
+  // Location search handlers (ArcGIS World Geocoding + Photon fallback)
+  const handleLocationInput = (val) => {
+    setLocationQuery(val);
+    setShowSuggestions(true);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    if (!val.trim() || val.length < 3) {
+      setLocationSuggestions([]);
+      return;
+    }
+    searchDebounceRef.current = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const arcRes = await fetch(
+          `https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/suggest?text=${encodeURIComponent(val)}&maxSuggestions=8&f=json`
+        );
+        const arcData = await arcRes.json();
+        const arcResults = (arcData.suggestions || []).map(s => ({
+          display_name: s.text,
+          magicKey: s.magicKey
+        }));
+
+        if (arcResults.length > 0) {
+          setLocationSuggestions(arcResults);
+        } else {
+          const photonRes = await fetch(
+            `https://photon.komoot.io/api/?q=${encodeURIComponent(val)}&limit=6&lang=en`
+          );
+          const photonData = await photonRes.json();
+          const photonResults = (photonData.features || []).map(f => ({
+            lat: f.geometry.coordinates[1],
+            lon: f.geometry.coordinates[0],
+            display_name: [
+              f.properties.name, f.properties.street,
+              f.properties.city || f.properties.town || f.properties.village,
+              f.properties.state, f.properties.country
+            ].filter(Boolean).join(', ')
+          }));
+          setLocationSuggestions(photonResults || []);
+        }
+      } catch {
+        setLocationSuggestions([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 400);
+  };
+
+  const handleLocationSelect = async (place) => {
+    setShowSuggestions(false);
+    setLocationSuggestions([]);
+    setLocationQuery(place.display_name);
+
+    try {
+      let lat, lng;
+      if (place.magicKey) {
+        const res = await fetch(
+          `https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?SingleLine=${encodeURIComponent(place.display_name)}&magicKey=${place.magicKey}&maxLocations=1&outFields=Match_addr&f=json`
+        );
+        const data = await res.json();
+        const candidate = data.candidates?.[0];
+        if (!candidate) return;
+        lat = candidate.location.y;
+        lng = candidate.location.x;
+      } else {
+        lat = parseFloat(place.lat);
+        lng = parseFloat(place.lon);
+      }
+
+      setUserLocation({ lat, lng, accuracy: null });
+      setIsUserLocationActive(true);
+      setSearchTarget({ lat, lng });
+    } catch {
+      alert('Could not resolve location coordinates. Please try another result.');
     }
   };
 
@@ -502,6 +598,48 @@ export const GisSpatialViewer = () => {
 
       {/* Main Interactive Map Center */}
       <div className="flex-1 h-full relative z-0">
+        {/* Floating Geocoding Location Search Bar (Same as Field Map) */}
+        <div className="absolute top-3 sm:top-4 left-14 sm:left-16 z-[500] w-64 xs:w-72 sm:w-96 max-w-[calc(100%-240px)]">
+          <div className="relative flex items-center shadow-2xl rounded-xl">
+            <Search className="absolute left-3 w-4 h-4 text-slate-400 z-10 pointer-events-none" />
+            <input
+              type="text"
+              value={locationQuery}
+              onChange={(e) => handleLocationInput(e.target.value)}
+              onFocus={() => locationSuggestions.length > 0 && setShowSuggestions(true)}
+              placeholder={t('Search location to navigate map (e.g. Palghar, Maharashtra)...')}
+              className="w-full pl-9 pr-9 py-2 bg-slate-900/95 border border-slate-700/80 backdrop-blur-md rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 shadow-xl transition"
+            />
+            {isSearching && (
+              <span className="absolute right-3 text-[10px] text-cyan-400 animate-pulse font-medium">{t('Searching...')}</span>
+            )}
+            {locationQuery && !isSearching && (
+              <button
+                type="button"
+                onClick={() => { setLocationQuery(''); setLocationSuggestions([]); setShowSuggestions(false); }}
+                className="absolute right-3 text-slate-400 hover:text-white transition"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+          {showSuggestions && locationSuggestions.length > 0 && (
+            <div className="absolute top-full left-0 right-0 z-[9999] bg-slate-900/98 border border-slate-700 rounded-xl shadow-2xl mt-1.5 overflow-hidden backdrop-blur-md max-h-60 overflow-y-auto custom-scrollbar">
+              {locationSuggestions.map((place, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleLocationSelect(place)}
+                  className="w-full text-left px-3.5 py-2.5 hover:bg-slate-800/90 transition flex items-start gap-2.5 border-b border-slate-800 last:border-0"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
+                  <span className="text-xs text-slate-200 leading-snug">{place.display_name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* PROMINENT HIGH-CONTRAST MAP VIEW SWITCHER (STANDARD MAP vs SATELLITE VIEW) */}
         <div className="absolute top-4 right-4 z-[500] bg-slate-900/95 border border-slate-700/80 rounded-2xl p-1.5 shadow-2xl flex items-center gap-1.5 backdrop-blur-md">
           <button
@@ -536,6 +674,7 @@ export const GisSpatialViewer = () => {
         </button>
 
         <MapContainer center={mapCenter} zoom={mapZoom} className="w-full h-full" ref={setMapInstance}>
+          <FlyToSearch target={searchTarget} />
           <MapLocationTrigger 
             locateTrigger={locateTrigger} 
             setUserLocation={setUserLocation} 

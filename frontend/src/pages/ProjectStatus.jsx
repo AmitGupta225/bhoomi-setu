@@ -205,12 +205,11 @@ export const ProjectStatus = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="px-5 py-3.5 bg-emerald-950/60 border border-emerald-500/40 rounded-2xl text-right shadow-lg">
-              <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block mb-1">{t('Current Milestone')}</span>
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-xl text-emerald-300 font-extrabold text-sm">
-                <span>{t('Step')} {projectDetail.current_stage_id}: {t(projectDetail.status)}</span>
-              </div>
+          <div className="w-fit self-start lg:self-auto px-3.5 py-2 bg-emerald-950/40 border border-emerald-500/30 rounded-xl flex flex-col items-start lg:items-end gap-1 shadow-sm shrink-0">
+            <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">{t('Current Milestone')}</span>
+            <div className="text-xs font-extrabold text-emerald-300 px-2.5 py-0.5 bg-emerald-500/20 border border-emerald-500/30 rounded-lg inline-flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>{t('Step')} {projectDetail.current_stage_id}: {t(projectDetail.status)}</span>
             </div>
           </div>
         </div>

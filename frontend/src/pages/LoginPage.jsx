@@ -22,7 +22,13 @@ import {
   Sun,
   Moon,
   AlertCircle,
-  Clock
+  Clock,
+  Fingerprint,
+  CreditCard,
+  Vote,
+  CheckCircle2,
+  X,
+  KeyRound
 } from 'lucide-react';
 
 export const LoginPage = () => {
@@ -36,6 +42,83 @@ export const LoginPage = () => {
   const [rememberMe, setRememberMe] = useState(true);
   const [authError, setAuthError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // Indian Government Document Options for Digital Identity Login
+  const GOV_DOC_TYPES = [
+    {
+      id: 'aadhaar',
+      name: 'Aadhaar / DigiLocker',
+      authority: 'UIDAI • Unique Identification Authority of India',
+      icon: Fingerprint,
+      placeholder: 'e.g. 5489 2104 9821',
+      demoId: '5489 2104 9821',
+      label: '12-Digit Aadhaar / 16-Digit Virtual ID (VID)',
+      defaultRole: 'CITIZEN'
+    },
+    {
+      id: 'parichay',
+      name: 'Jan Parichay (MeriPehchaan)',
+      authority: 'National Single Sign-On Gateway (MeitY)',
+      icon: Landmark,
+      placeholder: 'e.g. collector.palghar@gov.in',
+      demoId: 'collector.palghar@gov.in',
+      label: 'Government Parichay Email / Username',
+      defaultRole: 'COLLECTOR'
+    },
+    {
+      id: 'pan',
+      name: 'PAN Card (Income Tax)',
+      authority: 'Income Tax Department, Govt of India',
+      icon: CreditCard,
+      placeholder: 'e.g. BKWPV8492K',
+      demoId: 'BKWPV8492K',
+      label: '10-Character Alphanumeric PAN Card Number',
+      defaultRole: 'PFMS_OFFICER'
+    },
+    {
+      id: 'sparrow',
+      name: 'SPARROW / e-Office ID',
+      authority: 'Department of Personnel & Training (DoPT)',
+      icon: Building2,
+      placeholder: 'e.g. IAS/MH/2014/0082',
+      demoId: 'IAS/MH/2014/0082',
+      label: 'Civil Services Cadre / Employee Code',
+      defaultRole: 'SLAO'
+    },
+    {
+      id: 'voter',
+      name: 'Voter ID (EPIC)',
+      authority: 'Election Commission of India (ECI)',
+      icon: Vote,
+      placeholder: 'e.g. MH/12/345/678901',
+      demoId: 'MH/12/345/678901',
+      label: '10-Character Elector Photo Identity Card No.',
+      defaultRole: 'CITIZEN'
+    },
+    {
+      id: 'ulpin',
+      name: 'ULPIN / Bhu-Aadhaar',
+      authority: 'Department of Land Resources (DoLR)',
+      icon: MapPin,
+      placeholder: 'e.g. IN-MH-PAL-2026-00101',
+      demoId: 'IN-MH-PAL-2026-00101',
+      label: '14-Digit Bhu-Aadhaar Unique Parcel Code',
+      defaultRole: 'SURVEYOR'
+    }
+  ];
+
+  // Government ID Login Modal State
+  const [showGovIdModal, setShowGovIdModal] = useState(false);
+  const [selectedGovDocId, setSelectedGovDocId] = useState('aadhaar');
+  const [govDocNumber, setGovDocNumber] = useState('5489 2104 9821');
+  const [govRoleKey, setGovRoleKey] = useState('COLLECTOR');
+  const [govOtpSent, setGovOtpSent] = useState(false);
+  const [govOtpCode, setGovOtpCode] = useState('');
+  const [govVerifying, setGovVerifying] = useState(false);
+  const [govError, setGovError] = useState('');
+  const [govSuccess, setGovSuccess] = useState(false);
+
+  const selectedDoc = GOV_DOC_TYPES.find(d => d.id === selectedGovDocId) || GOV_DOC_TYPES[0];
 
   // Exact initial 8 stakeholder roles with dark + light styling
   const demoAccounts = [
@@ -281,6 +364,56 @@ export const LoginPage = () => {
     }
   };
 
+  const handleSelectGovDoc = (doc) => {
+    setSelectedGovDocId(doc.id);
+    setGovDocNumber(doc.demoId);
+    setGovRoleKey(doc.defaultRole);
+    setGovOtpSent(false);
+    setGovOtpCode('');
+    setGovError('');
+  };
+
+  const handleSendGovOtp = (e) => {
+    if (e) e.preventDefault();
+    if (!govDocNumber.trim()) {
+      setGovError(t('Please enter a valid document or identity number.'));
+      return;
+    }
+    setGovError('');
+    setGovOtpSent(true);
+    setGovOtpCode('582914');
+  };
+
+  const handleVerifyGovId = (e) => {
+    if (e) e.preventDefault();
+    if (!govOtpCode.trim() || govOtpCode.length < 4) {
+      setGovError(t('Please enter the 6-digit verification code.'));
+      return;
+    }
+
+    setGovVerifying(true);
+    setGovError('');
+
+    setTimeout(() => {
+      setGovVerifying(false);
+      setGovSuccess(true);
+
+      const targetAccount = demoAccounts.find(a => a.key === govRoleKey) || demoAccounts[0];
+      const normalizedRoleKey = (targetAccount.roleKey || 'COLLECTOR').toUpperCase();
+      const roleObj = ROLES[normalizedRoleKey] || ROLES['COLLECTOR'];
+
+      setTimeout(() => {
+        setShowGovIdModal(false);
+        login({
+          name: `${targetAccount.title} (${selectedDoc.name.split(' ')[0]} Verified)`,
+          email: targetAccount.email,
+          roleKey: normalizedRoleKey,
+          role: roleObj
+        });
+      }, 600);
+    }, 700);
+  };
+
   return (
     <div
       className={`login-page min-h-screen w-full flex flex-col font-sans select-none overflow-x-hidden transition-colors duration-300 ${
@@ -357,7 +490,7 @@ export const LoginPage = () => {
       <main className="flex-1 max-w-[1600px] w-full mx-auto p-2 sm:p-4 flex flex-col lg:flex-row gap-3 sm:gap-4 items-stretch z-10">
 
         {/* ── LEFT PANEL: Welcome Banner + 8 Role Cards ───────────────── */}
-        <div className="order-2 lg:order-1 flex-1 flex flex-col gap-2.5 sm:gap-3 min-w-0">
+        <div className="order-1 flex-1 flex flex-col gap-2.5 sm:gap-3 min-w-0">
 
           {/* 1. Welcome Hero Banner with Adaptive Day/Night Visuals */}
           <div
@@ -608,7 +741,7 @@ export const LoginPage = () => {
 
         {/* ── RIGHT PANEL: Sign In Box with Fading Background Image ──── */}
         <div
-          className={`order-1 lg:order-2 login-signin-panel w-full lg:w-[380px] xl:w-[400px] shrink-0 border rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-2xl relative overflow-hidden transition-colors duration-300 ${
+          className={`order-2 login-signin-panel w-full lg:w-[380px] xl:w-[400px] shrink-0 border rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-2xl relative overflow-hidden transition-colors duration-300 ${
             isDark
               ? 'bg-[#0b1a30] border-slate-700/40 text-slate-100'
               : 'bg-white border-slate-200/90 shadow-xl text-slate-800'
@@ -800,6 +933,11 @@ export const LoginPage = () => {
               {/* Government ID Login */}
               <button
                 type="button"
+                onClick={() => {
+                  setShowGovIdModal(true);
+                  setGovOtpSent(false);
+                  setGovError('');
+                }}
                 className={`w-full py-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 border ${
                   isDark
                     ? 'border-slate-700/80 bg-slate-800/40 hover:bg-slate-800/80 text-slate-300 hover:text-white'
@@ -854,6 +992,252 @@ export const LoginPage = () => {
       >
         <span>{t('Smart Land Management • Sustainable Development • Digital India')}</span>
       </footer>
+
+      {/* ── Government of India Identity Gateway Modal ─────────────────── */}
+      {showGovIdModal && (
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
+          <div
+            className={`w-full max-w-2xl border rounded-3xl p-4 sm:p-6 shadow-2xl relative overflow-hidden flex flex-col max-h-[92vh] transition-all ${
+              isDark
+                ? 'bg-slate-900 border-slate-700/80 text-slate-100 shadow-teal-950/40'
+                : 'bg-white border-slate-200 text-slate-800 shadow-2xl'
+            }`}
+          >
+            {/* Modal Header */}
+            <div className={`flex items-start justify-between border-b pb-3 mb-3 shrink-0 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-emerald-500 p-0.5 shadow-md shrink-0">
+                  <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+                    <Landmark className="w-5 h-5 text-amber-400" />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                      Digital India • MeitY
+                    </span>
+                  </div>
+                  <h3 className={`text-base sm:text-lg font-black font-heading mt-0.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    {t('Government of India Digital Identity Gateway')}
+                  </h3>
+                  <p className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {t('National Single Sign-On (SSO) & Aadhaar / PAN / Parichay Authentication')}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => { setShowGovIdModal(false); setGovOtpSent(false); setGovError(''); }}
+                className={`p-2 rounded-xl transition ${
+                  isDark ? 'hover:bg-slate-800 text-slate-400 hover:text-white' : 'hover:bg-slate-100 text-slate-500 hover:text-slate-800'
+                }`}
+                aria-label="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {govSuccess ? (
+              <div className="py-12 flex flex-col items-center justify-center text-center space-y-3 animate-in zoom-in-95">
+                <div className="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center text-emerald-400">
+                  <CheckCircle2 className="w-9 h-9" />
+                </div>
+                <h4 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('Identity Verified Successfully!')}</h4>
+                <p className="text-xs text-emerald-500 font-medium">
+                  {t('Authenticated via')} {selectedDoc.name} • {t('Entering Bhoomi Setu Workspace...')}
+                </p>
+                <div className="w-6 h-6 rounded-full border-2 border-emerald-500/30 border-t-emerald-400 animate-spin mt-2"></div>
+              </div>
+            ) : (
+              <div className="space-y-3.5 overflow-y-auto flex-1 pr-1 custom-scrollbar">
+                {/* 1. Select Document Option (6 Indian Government Options) */}
+                <div>
+                  <label className={`block text-[11px] font-bold uppercase tracking-wider mb-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                    {t('Select Official Identity Document:')}
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {GOV_DOC_TYPES.map((doc) => {
+                      const DocIcon = doc.icon;
+                      const isSelected = doc.id === selectedGovDocId;
+                      return (
+                        <button
+                          key={doc.id}
+                          type="button"
+                          onClick={() => handleSelectGovDoc(doc)}
+                          className={`p-2 sm:p-2.5 rounded-xl sm:rounded-2xl border text-left transition flex flex-col justify-between gap-1.5 relative ${
+                            isSelected
+                              ? (isDark 
+                                ? 'bg-gradient-to-br from-emerald-500/20 to-teal-500/10 border-emerald-400 shadow-md ring-1 ring-emerald-400/40'
+                                : 'bg-emerald-50 border-emerald-500 shadow-md ring-1 ring-emerald-500')
+                              : (isDark
+                                ? 'bg-slate-800/60 border-slate-700/60 hover:bg-slate-800 hover:border-slate-600'
+                                : 'bg-slate-50 border-slate-200 hover:bg-slate-100 hover:border-slate-300')
+                          }`}
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <div className={`p-1.5 rounded-xl ${isSelected ? 'bg-emerald-500 text-slate-950 font-bold' : isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'}`}>
+                              <DocIcon size={15} />
+                            </div>
+                            {isSelected && (
+                              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                            )}
+                          </div>
+                          <div>
+                            <div className={`text-xs font-bold leading-tight ${isSelected ? (isDark ? 'text-emerald-300' : 'text-emerald-700') : (isDark ? 'text-white' : 'text-slate-900')}`}>
+                              {doc.name}
+                            </div>
+                            <div className="text-[9.5px] text-slate-400 mt-0.5 truncate">
+                              {doc.authority.split('•')[0]}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Authority Badge */}
+                <div className={`p-2.5 rounded-xl border flex items-center gap-2 text-xs ${
+                  isDark ? 'bg-slate-800/40 border-slate-700/60 text-slate-300' : 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                }`}>
+                  <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span className="text-[11px] font-medium">
+                    {t('Official Gateway:')} <strong>{selectedDoc.authority}</strong>
+                  </span>
+                </div>
+
+                {/* 2. Document Identifier Input */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className={`text-xs font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                      {selectedDoc.label}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setGovDocNumber(selectedDoc.demoId)}
+                      className="text-[10px] font-bold text-emerald-500 hover:text-emerald-400 underline"
+                    >
+                      {t('Fill Demo ID')}
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    value={govDocNumber}
+                    onChange={(e) => setGovDocNumber(e.target.value)}
+                    placeholder={selectedDoc.placeholder}
+                    className={`w-full text-xs font-mono rounded-xl px-3 py-2 border focus:outline-none transition ${
+                      isDark
+                        ? 'bg-slate-800/80 border-slate-700 text-white focus:border-emerald-500'
+                        : 'bg-slate-50 border-slate-300 text-slate-900 focus:border-emerald-600'
+                    }`}
+                  />
+                </div>
+
+                {/* 3. Role Assignment */}
+                <div className="space-y-1">
+                  <label className={`text-xs font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                    {t('Authenticate Access For Stakeholder Role:')}
+                  </label>
+                  <select
+                    value={govRoleKey}
+                    onChange={(e) => setGovRoleKey(e.target.value)}
+                    className={`w-full text-xs rounded-xl px-3 py-2 border focus:outline-none transition ${
+                      isDark
+                        ? 'bg-slate-800/80 border-slate-700 text-emerald-300 focus:border-emerald-500'
+                        : 'bg-slate-50 border-slate-300 text-slate-900 focus:border-emerald-600'
+                    }`}
+                  >
+                    {demoAccounts.map(acc => (
+                      <option key={acc.key} value={acc.key}>
+                        {acc.title} ({acc.subtitle})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 4. OTP / Verification Step */}
+                {!govOtpSent ? (
+                  <button
+                    type="button"
+                    onClick={handleSendGovOtp}
+                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-slate-950 font-black text-xs transition shadow-lg flex items-center justify-center gap-2 mt-2"
+                  >
+                    <KeyRound size={15} />
+                    <span>{t('Generate & Send OTP via Gateway')}</span>
+                  </button>
+                ) : (
+                  <div className="space-y-2.5 p-3 rounded-2xl bg-emerald-950/20 border border-emerald-500/30 animate-in fade-in">
+                    <div className="flex items-center justify-between text-xs flex-wrap gap-1">
+                      <span className="text-emerald-400 font-bold flex items-center gap-1.5 text-[11px]">
+                        <CheckCircle2 size={13} className="text-emerald-400" />
+                        {t('OTP Sent to Registered Mobile')} (+91 ******4500)
+                      </span>
+                      <span className="text-[10px] text-amber-300 font-mono bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30 font-bold">
+                        Demo OTP: 582914
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        maxLength={6}
+                        value={govOtpCode}
+                        onChange={(e) => setGovOtpCode(e.target.value)}
+                        placeholder="Enter 6-digit OTP"
+                        className={`w-full text-center tracking-widest font-mono text-base font-bold rounded-xl py-2 border focus:outline-none ${
+                          isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-300 text-slate-900'
+                        }`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setGovOtpCode('582914')}
+                        className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-bold rounded-xl border border-slate-700 shrink-0"
+                      >
+                        {t('Auto-Fill')}
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={govVerifying}
+                      onClick={handleVerifyGovId}
+                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs transition shadow-lg flex items-center justify-center gap-2"
+                    >
+                      {govVerifying ? (
+                        <div className="w-4 h-4 rounded-full border-2 border-slate-950 border-t-transparent animate-spin" />
+                      ) : (
+                        <ShieldCheck size={16} />
+                      )}
+                      <span>{govVerifying ? t('Verifying Credentials...') : t('Verify & Enter Bhoomi Setu')}</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Error Banner */}
+                {govError && (
+                  <div className="p-2.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs flex items-center gap-2">
+                    <AlertCircle size={14} className="shrink-0" />
+                    <span>{govError}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Modal Footer */}
+            <div className={`border-t pt-3 mt-3 flex items-center justify-between text-xs shrink-0 ${isDark ? 'border-slate-800 text-slate-500' : 'border-slate-200 text-slate-500'}`}>
+              <span className="text-[10px]">NIC • MeitY • Government of India</span>
+              <button
+                type="button"
+                onClick={() => { setShowGovIdModal(false); setGovOtpSent(false); setGovError(''); }}
+                className="text-xs text-slate-400 hover:text-white underline"
+              >
+                {t('Cancel')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
