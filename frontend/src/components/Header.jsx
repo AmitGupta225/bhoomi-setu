@@ -8,8 +8,7 @@ import {
   Sun,
   Moon,
   Menu,
-  X,
-  ChevronDown
+  X
 } from 'lucide-react';
 
 export const Header = () => {
@@ -26,9 +25,7 @@ export const Header = () => {
     t 
   } = useAuth();
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
-  const [showUserDropdown, setShowUserDropdown] = useState(false);
   const notifRef = useRef(null);
-  const userRef = useRef(null);
 
   const isDark = theme === 'dark';
   const unreadCount = notifications.filter(n => n.unread).length;
@@ -38,9 +35,6 @@ export const Header = () => {
     function handleClickOutside(event) {
       if (notifRef.current && !notifRef.current.contains(event.target)) {
         setShowNotifDropdown(false);
-      }
-      if (userRef.current && !userRef.current.contains(event.target)) {
-        setShowUserDropdown(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -170,73 +164,36 @@ export const Header = () => {
           )}
         </div>
 
-        {/* User Profile Pill & Quick Dropdown (Tablet & Desktop) */}
+        {/* User Profile Info Pill (Tablet & Desktop) */}
         {user && (
-          <div className="relative shrink-0" ref={userRef}>
-            <button
-              type="button"
-              onClick={() => setShowUserDropdown(!showUserDropdown)}
-              className={`hidden md:flex items-center gap-2 px-2.5 py-1.5 rounded-xl border transition text-xs shrink-0 ${
-                isDark
-                  ? 'bg-slate-800/80 hover:bg-slate-700/80 border-slate-700/70 text-slate-200'
-                  : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-800'
-              }`}
-              title={`${user.name} (${t(activeRole.badge)})`}
-            >
-              <div className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 font-extrabold flex items-center justify-center text-[10px] shrink-0 border border-emerald-500/30">
-                {user.name ? user.name.charAt(0) : 'U'}
-              </div>
-              <div className="flex flex-col text-left max-w-[110px] lg:max-w-[150px] truncate">
-                <span className="font-bold text-[11px] leading-tight truncate">
-                  {user.name}
-                </span>
-                <span className="text-[9px] text-emerald-500 font-medium leading-tight truncate">
-                  {t(activeRole.badge)}
-                </span>
-              </div>
-              <ChevronDown size={12} className={`opacity-60 transition-transform ${showUserDropdown ? 'rotate-180' : ''}`} />
-            </button>
-
-            {/* Desktop User Menu Dropdown */}
-            {showUserDropdown && (
-              <div className={`absolute right-0 mt-2 w-64 border rounded-2xl shadow-2xl p-3 z-[10000] animate-in fade-in slide-in-from-top-2 ${
-                isDark ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-800'
-              }`}>
-                <div className="flex items-center gap-2.5 pb-3 border-b border-slate-700/40 mb-2">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 font-black flex items-center justify-center text-sm border border-emerald-500/30 shrink-0">
-                    {user.name ? user.name.charAt(0) : 'U'}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="font-extrabold text-xs truncate">{user.name}</div>
-                    <div className="text-[10px] text-slate-400 truncate">{user.email}</div>
-                    <div className="inline-block px-1.5 py-0.5 mt-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[9px] font-bold">
-                      {t(activeRole.badge)}
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowUserDropdown(false);
-                    logout();
-                  }}
-                  className="w-full py-2 px-3 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 hover:text-rose-300 font-bold text-xs flex items-center justify-center gap-2 transition border border-rose-500/30"
-                >
-                  <LogOut size={14} />
-                  <span>{t('Sign Out')}</span>
-                </button>
-              </div>
-            )}
+          <div
+            className={`hidden md:flex items-center gap-2 px-2.5 py-1.5 rounded-xl border text-xs shrink-0 ${
+              isDark
+                ? 'bg-slate-800/80 border-slate-700/70 text-slate-200'
+                : 'bg-slate-100 border-slate-200 text-slate-800'
+            }`}
+            title={`${user.name} (${t(activeRole.badge)})`}
+          >
+            <div className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 font-extrabold flex items-center justify-center text-[10px] shrink-0 border border-emerald-500/30">
+              {user.name ? user.name.charAt(0) : 'U'}
+            </div>
+            <div className="flex flex-col text-left max-w-[110px] lg:max-w-[150px] truncate">
+              <span className="font-bold text-[11px] leading-tight truncate">
+                {user.name}
+              </span>
+              <span className="text-[9px] text-emerald-500 font-medium leading-tight truncate">
+                {t(activeRole.badge)}
+              </span>
+            </div>
           </div>
         )}
 
-        {/* ── SIGN OUT BUTTON (PROMINENT & DIRECTLY VISIBLE ON ALL SCREENS) ── */}
+        {/* ── CORNER SIGN OUT BUTTON (DESKTOP / WINDOWS ONLY) ── */}
         {user && (
           <button
             type="button"
             onClick={logout}
-            className="px-2 sm:px-3 py-1.5 bg-rose-500/15 hover:bg-rose-500/25 active:bg-rose-500/35 text-rose-400 hover:text-rose-300 border border-rose-500/35 hover:border-rose-500/60 rounded-xl transition-all flex items-center gap-1 sm:gap-1.5 text-xs font-extrabold shadow-sm shadow-rose-950/20 active:scale-95 shrink-0"
+            className="hidden md:flex px-2 sm:px-3 py-1.5 bg-rose-500/15 hover:bg-rose-500/25 active:bg-rose-500/35 text-rose-400 hover:text-rose-300 border border-rose-500/35 hover:border-rose-500/60 rounded-xl transition-all items-center gap-1 sm:gap-1.5 text-xs font-extrabold shadow-sm shadow-rose-950/20 active:scale-95 shrink-0"
             title={t('Sign Out')}
             aria-label="Sign Out"
           >

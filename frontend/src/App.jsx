@@ -3,13 +3,6 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { ProjectDossierBar } from './components/ProjectDossierBar';
-import { 
-  BarChart3, 
-  GitMerge, 
-  Map, 
-  Layers, 
-  Menu
-} from 'lucide-react';
 
 // Code-split page components with React.lazy
 const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })));
@@ -85,12 +78,7 @@ export function MainLayout() {
     isAuthenticated, 
     activeTab, 
     setActiveTab, 
-    isTabAllowed, 
-    activeRole,
-    isMobileMenuOpen,
-    setIsMobileMenuOpen,
-    theme,
-    t
+    theme
   } = useAuth();
   const isDark = theme === 'dark';
 
@@ -139,17 +127,6 @@ export function MainLayout() {
     }
   };
 
-  // Select 4 primary shortcuts for mobile bottom bar
-  const bottomBarItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-    { id: 'workflow', label: 'Status', icon: GitMerge },
-    { id: 'gis', label: 'Map', icon: Map },
-    // 4th slot: role-specific primary tab
-    activeRole.defaultTab !== 'dashboard' && activeRole.defaultTab !== 'gis' && activeRole.defaultTab !== 'workflow'
-      ? { id: activeRole.defaultTab, label: 'Workspace', icon: Layers }
-      : { id: 'documents', label: 'Vault', icon: Layers }
-  ].filter(item => isTabAllowed(item.id));
-
   return (
     <div className={`h-screen flex flex-col font-sans max-w-full overflow-hidden relative ${isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-800'}`}>
       {/* Colorful Background Gradients matching the Portal Theme */}
@@ -165,7 +142,7 @@ export function MainLayout() {
         <div className="flex-1 flex min-w-0 overflow-hidden relative">
           <Sidebar />
 
-          <main className={`flex-1 overflow-x-hidden ${activeTab === 'gis' ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-20 md:pb-6'} flex flex-col min-w-0`}>
+          <main className={`flex-1 overflow-x-hidden ${activeTab === 'gis' ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-6'} flex flex-col min-w-0`}>
             {activeTab !== 'dashboard' && activeTab !== 'citizen' && activeTab !== 'proposal' && <ProjectDossierBar />}
             <div className={`flex-1 min-w-0 max-w-full overflow-x-hidden ${activeTab === 'gis' ? 'flex flex-col h-full overflow-hidden' : ''}`}>
               <ErrorBoundary>
@@ -176,41 +153,6 @@ export function MainLayout() {
             </div>
           </main>
         </div>
-
-        {/* ── Mobile Bottom Quick Navigation Bar (md:hidden) ────────── */}
-        <nav className={`md:hidden fixed bottom-0 inset-x-0 backdrop-blur-lg border-t z-40 px-2 py-1.5 flex items-center justify-around shadow-2xl transition-colors ${
-          isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200 shadow-slate-300'
-        }`}>
-          {bottomBarItems.map(item => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition ${
-                  isActive 
-                    ? (isDark ? 'text-emerald-400 font-bold' : 'text-emerald-600 font-bold')
-                    : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800')
-                }`}
-              >
-                <Icon size={18} className={isActive ? (isDark ? 'text-emerald-400' : 'text-emerald-600') : (isDark ? 'text-slate-400' : 'text-slate-500')} />
-                <span className="text-[10px] leading-tight">{t(item.label)}</span>
-              </button>
-            );
-          })}
-
-          {/* "More / Menu" button toggles full mobile drawer */}
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition ${
-              isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
-            }`}
-          >
-            <Menu size={18} className={isDark ? 'text-slate-400' : 'text-slate-500'} />
-            <span className="text-[10px] leading-tight">{t('More')}</span>
-          </button>
-        </nav>
       </div>
     </div>
   );

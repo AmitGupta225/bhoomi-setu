@@ -656,16 +656,6 @@ export const LoginPage = () => {
             
             {/* Sign In Header sitting directly over the fading satellite background */}
             <div className="mb-4 pt-1">
-              <div
-                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[10px] font-semibold mb-2 shadow-sm border ${
-                  isDark
-                    ? 'bg-teal-500/15 border-teal-500/30 text-teal-300'
-                    : 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                }`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>{t('GIS Authenticated Portal')}</span>
-              </div>
               <h3
                 className={`text-2xl font-black tracking-tight drop-shadow-sm ${
                   isDark ? 'text-white' : 'text-slate-900'
