@@ -142,9 +142,9 @@ export function MainLayout() {
         <div className="flex-1 flex min-w-0 overflow-hidden relative">
           <Sidebar />
 
-          <main className={`flex-1 overflow-x-hidden ${activeTab === 'gis' ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-6'} flex flex-col min-w-0`}>
+          <main className={`flex-1 overflow-x-hidden ${activeTab === 'gis' ? 'overflow-y-auto lg:overflow-hidden pb-6 lg:pb-0' : 'overflow-y-auto pb-6'} flex flex-col min-w-0`}>
             {activeTab !== 'dashboard' && activeTab !== 'citizen' && activeTab !== 'proposal' && <ProjectDossierBar />}
-            <div className={`flex-1 min-w-0 max-w-full overflow-x-hidden ${activeTab === 'gis' ? 'flex flex-col h-full overflow-hidden' : ''}`}>
+            <div className={`flex-1 min-w-0 max-w-full overflow-x-hidden ${activeTab === 'gis' ? 'flex flex-col lg:h-full lg:min-h-0 lg:overflow-hidden' : ''}`}>
               <ErrorBoundary>
                 <Suspense fallback={<ViewLoader />}>
                   {renderActiveView()}

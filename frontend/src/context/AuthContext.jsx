@@ -100,7 +100,7 @@ export const ROLES = {
     badge: 'Field Inspector',
     color: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
     description: 'Conduct ground inspections, capture GPS coordinates & boundary tags',
-    allowedTabs: ['dashboard', 'field', 'workflow'],
+    allowedTabs: ['dashboard', 'field', 'gis', 'workflow'],
     defaultTab: 'field',
     authorizedSteps: [5]
   },

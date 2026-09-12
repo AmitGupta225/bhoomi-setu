@@ -141,6 +141,20 @@ export const GisSpatialViewer = () => {
   
   // Bulletproof map instance and bounds tracking
   const [mapInstance, setMapInstance] = useState(null);
+
+  // Ensure map smoothly recalculates container dimensions on mount/resize (crucial for mobile responsive layout)
+  useEffect(() => {
+    if (!mapInstance) return;
+    const timer = setTimeout(() => {
+      mapInstance.invalidateSize();
+    }, 250);
+    const handleResize = () => mapInstance.invalidateSize();
+    window.addEventListener('resize', handleResize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [mapInstance]);
   const prevParcelIdRef = useRef(null);
 
   useEffect(() => {
@@ -403,9 +417,9 @@ export const GisSpatialViewer = () => {
   const boundsInfo = getParcelBoundsInfo();
 
   return (
-    <div className="h-[calc(100vh-130px)] flex flex-col lg:flex-row overflow-hidden relative">
+    <div className="min-h-full lg:h-[calc(100vh-130px)] flex flex-col lg:flex-row overflow-visible lg:overflow-hidden relative">
       {/* Sidebar Controls & Parcel Details Panel */}
-      <div className="w-full lg:w-80 bg-slate-900 border-r border-slate-800 flex flex-col z-20 shrink-0 shadow-2xl">
+      <div className="w-full lg:w-80 bg-slate-900 border-b lg:border-b-0 lg:border-r border-slate-800 flex flex-col z-20 shrink-0 shadow-2xl lg:h-full">
         {/* Header Search */}
         <div className="p-3 border-b border-slate-800 space-y-2.5">
           <div className="flex items-center justify-between">
@@ -453,7 +467,7 @@ export const GisSpatialViewer = () => {
         </div>
 
         {/* Selected Parcel Deep Details & Boundary Lat/Lng Box */}
-        <div className="flex-1 p-3 overflow-y-auto space-y-3">
+        <div className="p-3 lg:flex-1 lg:overflow-y-auto space-y-3">
           {selectedParcel ? (
             <div className="space-y-3">
               <div className="p-3 bg-slate-800/60 border border-slate-700 rounded-xl space-y-2">
@@ -602,9 +616,9 @@ export const GisSpatialViewer = () => {
       </div>
 
       {/* Main Interactive Map Center */}
-      <div className="flex-1 h-full relative z-0">
+      <div className="w-full h-[60vh] min-h-[420px] lg:h-full lg:flex-1 relative z-0 shrink-0">
         {/* Floating Geocoding Location Search Bar (Same as Field Map) */}
-        <div className="absolute top-3 sm:top-4 left-14 sm:left-16 z-[500] w-64 xs:w-72 sm:w-96 max-w-[calc(100%-240px)]">
+        <div className="absolute top-3 sm:top-4 left-14 sm:left-16 z-[500] w-56 xs:w-72 sm:w-96 max-w-[calc(100%-200px)]">
           <div className="relative flex items-center shadow-2xl rounded-xl">
             <Search className="absolute left-3 w-4 h-4 text-slate-400 z-10 pointer-events-none" />
             <input
