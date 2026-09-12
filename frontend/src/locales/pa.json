@@ -1804,5 +1804,15 @@
   "Mandatory Field Missing: Khata Number cannot be empty.": "ਲਾਜ਼ਮੀ ਖੇਤਰ ਗੁੰਮ: ਖਾਤਾ ਨੰਬਰ ਖਾਲੀ ਨਹੀਂ ਹੋ ਸਕਦਾ।",
   "Mandatory Field Missing: Village name cannot be empty.": "ਲਾਜ਼ਮੀ ਖੇਤਰ ਗੁੰਮ: ਪਿੰਡ ਦਾ ਨਾਮ ਖਾਲੀ ਨਹੀਂ ਹੋ ਸਕਦਾ।",
   "Mandatory Field Missing: Primary Landowner Name cannot be empty.": "ਲਾਜ਼ਮੀ ਖੇਤਰ ਗੁੰਮ: ਜ਼ਮੀਨ ਮਾਲਕ ਦਾ ਨਾਮ ਖਾਲੀ ਨਹੀਂ ਹੋ ਸਕਦਾ।",
-  "Mandatory Field Missing: A valid land boundary polygon must have at least 3 corner vertices.": "ਲਾਜ਼ਮੀ ਖੇਤਰ ਗੁੰਮ: ਘੱਟੋ-ਘੱਟ ੩ ਬਿੰਦੂ ਲੋੜੀਂਦੇ ਹਨ।"
+  "Mandatory Field Missing: A valid land boundary polygon must have at least 3 corner vertices.": "ਲਾਜ਼ਮੀ ਖੇਤਰ ਗੁੰਮ: ਘੱਟੋ-ਘੱਟ ੩ ਬਿੰਦੂ ਲੋੜੀਂਦੇ ਹਨ।",
+  "Standard HD": "ਮਿਆਰੀ ਐਚਡੀ",
+  "Satellite HD": "ਸੈਟੇਲਾਈਟ ਐਚਡੀ",
+  "Hybrid HD": "ਹਾਈਬ੍ਰਿਡ ਐਚਡੀ",
+  "Area (15x)": "ਖੇਤਰ (15x)",
+  "Parcel (18x)": "ਪਾਰਸਲ (18x)",
+  "HD Boundary (21.5x)": "ਐਚਡੀ ਸੀਮਾ (21.5x)",
+  "Ultra HD (Sub-Meter)": "ਅਲਟਰਾ ਐਚਡੀ (ਸਬ-ਮੀਟਰ)",
+  "HD Scale": "ਐਚਡੀ ਸਕੇਲ",
+  "Zoom In": "ਜ਼ੂਮ ਇਨ",
+  "Zoom Out": "ਜ਼ੂਮ ਆਊਟ"
 }

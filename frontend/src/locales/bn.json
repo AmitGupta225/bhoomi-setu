@@ -1804,5 +1804,15 @@
   "Mandatory Field Missing: Khata Number cannot be empty.": "বাধ্যতামূলক ক্ষেত্র অনুপস্থিত: খতিয়ান নম্বর খালি রাখা যাবে না।",
   "Mandatory Field Missing: Village name cannot be empty.": "বাধ্যতামূলক ক্ষেত্র অনুপস্থিত: গ্রামের নাম খালি রাখা যাবে না।",
   "Mandatory Field Missing: Primary Landowner Name cannot be empty.": "বাধ্যতামূলক ক্ষেত্র অনুপস্থিত: জমির মালিকের নাম খালি রাখা যাবে না।",
-  "Mandatory Field Missing: A valid land boundary polygon must have at least 3 corner vertices.": "বাধ্যতামূলক ক্ষেত্র অনুপস্থিত: কমপক্ষে ৩টি শীর্ষবিন্দু প্রয়োজন।"
+  "Mandatory Field Missing: A valid land boundary polygon must have at least 3 corner vertices.": "বাধ্যতামূলক ক্ষেত্র অনুপস্থিত: কমপক্ষে ৩টি শীর্ষবিন্দু প্রয়োজন।",
+  "Standard HD": "স্ট্যান্ডার্ড এইচডি",
+  "Satellite HD": "স্যাটেলাইট এইচডি",
+  "Hybrid HD": "হাইব্রিড এইচডি",
+  "Area (15x)": "এলাকা (15x)",
+  "Parcel (18x)": "পার্সেল (18x)",
+  "HD Boundary (21.5x)": "এইচডি সীমানা (21.5x)",
+  "Ultra HD (Sub-Meter)": "আল্ট্রা এইচডি (সাব-মিটার)",
+  "HD Scale": "এইচডি স্কেল",
+  "Zoom In": "জুম ইন",
+  "Zoom Out": "জুম আউট"
 }

@@ -1804,5 +1804,15 @@
   "Mandatory Field Missing: Khata Number cannot be empty.": "ಕಡ್ಡಾಯ ಕ್ಷೇತ್ರ ಕಾಣೆಯಾಗಿದೆ: ಖಾತಾ ಸಂಖ್ಯೆ ಖಾಲಿಯಾಗಿರಬಾರದು.",
   "Mandatory Field Missing: Village name cannot be empty.": "ಕಡ್ಡಾಯ ಕ್ಷೇತ್ರ ಕಾಣೆಯಾಗಿದೆ: ಹಳ್ಳಿಯ ಹೆಸರು ಖಾಲಿಯಾಗಿರಬಾರದು.",
   "Mandatory Field Missing: Primary Landowner Name cannot be empty.": "ಕಡ್ಡಾಯ ಕ್ಷೇತ್ರ ಕಾಣೆಯಾಗಿದೆ: ಭೂಮಾಲೀಕರ ಹೆಸರು ಖಾಲಿಯಾಗಿರಬಾರದು.",
-  "Mandatory Field Missing: A valid land boundary polygon must have at least 3 corner vertices.": "ಕಡ್ಡಾಯ ಕ್ಷೇತ್ರ ಕಾಣೆಯಾಗಿದೆ: ಕನಿಷ್ಠ 3 ಶೃಂಗಗಳು ಅಗತ್ಯವಿದೆ."
+  "Mandatory Field Missing: A valid land boundary polygon must have at least 3 corner vertices.": "ಕಡ್ಡಾಯ ಕ್ಷೇತ್ರ ಕಾಣೆಯಾಗಿದೆ: ಕನಿಷ್ಠ 3 ಶೃಂಗಗಳು ಅಗತ್ಯವಿದೆ.",
+  "Standard HD": "ಪ್ರಮಾಣಿತ HD",
+  "Satellite HD": "ಉಪಗ್ರಹ HD",
+  "Hybrid HD": "ಹೈಬ್ರಿಡ್ HD",
+  "Area (15x)": "ಪ್ರದೇಶ (15x)",
+  "Parcel (18x)": "ಪಾರ್ಸೆಲ್ (18x)",
+  "HD Boundary (21.5x)": "HD ಗಡಿ (21.5x)",
+  "Ultra HD (Sub-Meter)": "ಅಲ್ಟ್ರಾ HD (ಉಪ-ಮೀಟರ್)",
+  "HD Scale": "HD ಮಾಪಕ",
+  "Zoom In": "ಜೂಮ್ ಇನ್",
+  "Zoom Out": "ಜೂಮ್ ಔಟ್"
 }

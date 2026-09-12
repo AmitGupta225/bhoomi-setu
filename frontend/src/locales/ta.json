@@ -1804,5 +1804,15 @@
   "Mandatory Field Missing: Khata Number cannot be empty.": "கட்டாய புலம் விடுபட்டுள்ளது: கட்டா எண் காலியாக இருக்கக்கூடாது.",
   "Mandatory Field Missing: Village name cannot be empty.": "கட்டாய புலம் விடுபட்டுள்ளது: கிராமத்தின் பெயர் காலியாக இருக்கக்கூடாது.",
   "Mandatory Field Missing: Primary Landowner Name cannot be empty.": "கட்டாய புலம் விடுபட்டுள்ளது: நில உரிமையாளர் பெயர் காலியாக இருக்கக்கூடாது.",
-  "Mandatory Field Missing: A valid land boundary polygon must have at least 3 corner vertices.": "கட்டாய புலம் விடுபட்டுள்ளது: குறைந்தது 3 உச்சிகள் தேவை."
+  "Mandatory Field Missing: A valid land boundary polygon must have at least 3 corner vertices.": "கட்டாய புலம் விடுபட்டுள்ளது: குறைந்தது 3 உச்சிகள் தேவை.",
+  "Standard HD": "நிலையான HD",
+  "Satellite HD": "செயற்கைக்கோள் HD",
+  "Hybrid HD": "ஹைப்ரிட் HD",
+  "Area (15x)": "பகுதி (15x)",
+  "Parcel (18x)": "பார்சல் (18x)",
+  "HD Boundary (21.5x)": "HD எல்லை (21.5x)",
+  "Ultra HD (Sub-Meter)": "அல்ட்ரா HD (துணை மீட்டர்)",
+  "HD Scale": "HD அளவு",
+  "Zoom In": "பெரிதாக்கு",
+  "Zoom Out": "சிறிதாக்கு"
 }

@@ -1804,5 +1804,15 @@
   "Mandatory Field Missing: Khata Number cannot be empty.": "अनिवार्य फ़ील्ड अनुपलब्ध: खाता संख्या खाली नहीं हो सकती।",
   "Mandatory Field Missing: Village name cannot be empty.": "अनिवार्य फ़ील्ड अनुपलब्ध: गाँव का नाम खाली नहीं हो सकता।",
   "Mandatory Field Missing: Primary Landowner Name cannot be empty.": "अनिवार्य फ़ील्ड अनुपलब्ध: प्राथमिक भूस्वामी का नाम खाली नहीं हो सकता।",
-  "Mandatory Field Missing: A valid land boundary polygon must have at least 3 corner vertices.": "अनिवार्य फ़ील्ड अनुपलब्ध: वैध भूमि सीमा के लिए कम से कम 3 कोने आवश्यक हैं।"
+  "Mandatory Field Missing: A valid land boundary polygon must have at least 3 corner vertices.": "अनिवार्य फ़ील्ड अनुपलब्ध: वैध भूमि सीमा के लिए कम से कम 3 कोने आवश्यक हैं।",
+  "Standard HD": "मानक एचडी",
+  "Satellite HD": "उपग्रह एचडी",
+  "Hybrid HD": "हाइब्रिड एचडी",
+  "Area (15x)": "क्षेत्र (15x)",
+  "Parcel (18x)": "पार्सल (18x)",
+  "HD Boundary (21.5x)": "एचडी सीमा (21.5x)",
+  "Ultra HD (Sub-Meter)": "अल्ट्रा एचडी (सब-मीटर)",
+  "HD Scale": "एचडी पैमाना",
+  "Zoom In": "ज़ूम इन",
+  "Zoom Out": "ज़ूम आउट"
 }

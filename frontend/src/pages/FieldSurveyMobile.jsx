@@ -80,6 +80,7 @@ function MapEventsListener({ onMapClick }) {
   return null;
 }
 
+
 // Leaflet Location Handler Helper with robust offline support
 function MapLocationTrigger({ locateTrigger, setUserLocation, setIsLocating, setIsUserLocationActive }) {
   const map = useMap();
@@ -254,11 +255,15 @@ export const FieldSurveyMobile = () => {
   const tileLayerConfig = {
     osm: {
       url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap India</a>'
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap India</a>',
+      maxNativeZoom: 19,
+      maxZoom: 22
     },
     satellite: {
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      attribution: '&copy; Esri World Imagery'
+      attribution: '&copy; Esri World Imagery',
+      maxNativeZoom: 19,
+      maxZoom: 22
     }
   };
   
@@ -1328,6 +1333,11 @@ export const FieldSurveyMobile = () => {
               <MapContainer
                 center={[vertices[0]?.lat || searchTarget?.lat || 19.7280, vertices[0]?.lng || searchTarget?.lng || 72.8450]}
                 zoom={16}
+                minZoom={3}
+                maxZoom={22}
+                zoomSnap={0.5}
+                zoomDelta={0.5}
+                wheelPxPerZoomLevel={100}
                 className="w-full h-full"
                 style={{ backgroundColor: '#0a1628' }}
               >
@@ -1343,8 +1353,12 @@ export const FieldSurveyMobile = () => {
                 />
 
                 <TileLayer
-                  attribution={tileLayerConfig[mapStyle].attribution}
-                  url={tileLayerConfig[mapStyle].url}
+                  key={mapStyle}
+                  attribution={tileLayerConfig[mapStyle]?.attribution || tileLayerConfig.osm.attribution}
+                  url={tileLayerConfig[mapStyle]?.url || tileLayerConfig.osm.url}
+                  maxZoom={22}
+                  maxNativeZoom={tileLayerConfig[mapStyle]?.maxNativeZoom || 19}
+                  keepBuffer={8}
                 />
 
                 {/* Existing Village Cadastral Parcels Outlines */}

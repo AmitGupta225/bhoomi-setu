@@ -1804,5 +1804,15 @@
   "Mandatory Field Missing: Khata Number cannot be empty.": "ବାଧ୍ୟତାମୂଳକ କ୍ଷେତ୍ର ନାହିଁ: ଖାତା ନମ୍ବਰ ଖାଲି ରହିପାରିବ ନାହିଁ।",
   "Mandatory Field Missing: Village name cannot be empty.": "ବାଧ୍ୟତାମୂଳକ କ୍ଷେତ୍ର ନାହିଁ: ଗ୍ରାମର ନାମ ଖାଲି ରହିପାରିବ ନାହିଁ।",
   "Mandatory Field Missing: Primary Landowner Name cannot be empty.": "ବାଧ୍ୟତାମୂଳକ କ୍ଷେତ୍ର ନାହିଁ: ଜମି ମାଲିକଙ୍କ ନାମ ଖାଲି ରହିପାରିବ ନାହିଁ।",
-  "Mandatory Field Missing: A valid land boundary polygon must have at least 3 corner vertices.": "ବାଧ୍ୟତାମୂଳକ କ୍ଷେତ୍ର ନାହିଁ: ଅତି କମରେ ୩ଟି ଶୀର୍ଷ ଆବଶ୍ୟକ।"
+  "Mandatory Field Missing: A valid land boundary polygon must have at least 3 corner vertices.": "ବାଧ୍ୟତାମୂଳକ କ୍ଷେତ୍ର ନାହିଁ: ଅତି କମରେ ୩ଟି ଶୀର୍ଷ ଆବଶ୍ୟକ।",
+  "Standard HD": "ମାନକ HD",
+  "Satellite HD": "ଉପଗ୍ରହ HD",
+  "Hybrid HD": "ହାଇବ୍ରିଡ୍ HD",
+  "Area (15x)": "କ୍ଷେତ୍ର (15x)",
+  "Parcel (18x)": "ପାର୍ସଲ (18x)",
+  "HD Boundary (21.5x)": "HD ସୀମା (21.5x)",
+  "Ultra HD (Sub-Meter)": "ଅଲ୍ଟ୍ରା HD (ସବ୍-ମିଟର)",
+  "HD Scale": "HD ମାପ",
+  "Zoom In": "ଜୁମ୍ ଇନ୍",
+  "Zoom Out": "ଜୁମ୍ ଆଉଟ୍"
 }

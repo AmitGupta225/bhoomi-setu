@@ -1804,5 +1804,15 @@
   "Mandatory Field Missing: Khata Number cannot be empty.": "Mandatory Field Missing: Khata Number cannot be empty.",
   "Mandatory Field Missing: Village name cannot be empty.": "Mandatory Field Missing: Village name cannot be empty.",
   "Mandatory Field Missing: Primary Landowner Name cannot be empty.": "Mandatory Field Missing: Primary Landowner Name cannot be empty.",
-  "Mandatory Field Missing: A valid land boundary polygon must have at least 3 corner vertices.": "Mandatory Field Missing: A valid land boundary polygon must have at least 3 corner vertices."
+  "Mandatory Field Missing: A valid land boundary polygon must have at least 3 corner vertices.": "Mandatory Field Missing: A valid land boundary polygon must have at least 3 corner vertices.",
+  "Standard HD": "Standard HD",
+  "Satellite HD": "Satellite HD",
+  "Hybrid HD": "Hybrid HD",
+  "Area (15x)": "Area (15x)",
+  "Parcel (18x)": "Parcel (18x)",
+  "HD Boundary (21.5x)": "HD Boundary (21.5x)",
+  "Ultra HD (Sub-Meter)": "Ultra HD (Sub-Meter)",
+  "HD Scale": "HD Scale",
+  "Zoom In": "Zoom In",
+  "Zoom Out": "Zoom Out"
 }

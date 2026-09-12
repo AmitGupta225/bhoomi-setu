@@ -1804,5 +1804,15 @@
   "Mandatory Field Missing: Khata Number cannot be empty.": "നിർബന്ധിത ഫീൽഡ് ലഭ്യമല്ല: ഖാതാ നമ്പർ ശൂന്യമാകരുത്.",
   "Mandatory Field Missing: Village name cannot be empty.": "നിർബന്ധിത ഫീൽഡ് ലഭ്യമല്ല: ഗ്രാമത്തിന്റെ പേര് ശൂന്യമാകരുത്.",
   "Mandatory Field Missing: Primary Landowner Name cannot be empty.": "നിർബന്ധിത ഫീൽഡ് ലഭ്യമല്ല: ഭൂവുടമയുടെ പേര് ശൂന്യമാകരുത്.",
-  "Mandatory Field Missing: A valid land boundary polygon must have at least 3 corner vertices.": "നിർബന്ധിത ഫീൽഡ് ലഭ്യമല്ല: കുറഞ്ഞത് 3 ബിന്ദുക്കൾ ആവശ്യമാണ്."
+  "Mandatory Field Missing: A valid land boundary polygon must have at least 3 corner vertices.": "നിർബന്ധിത ഫീൽഡ് ലഭ്യമല്ല: കുറഞ്ഞത് 3 ബിന്ദുക്കൾ ആവശ്യമാണ്.",
+  "Standard HD": "സ്റ്റാൻഡേർഡ് HD",
+  "Satellite HD": "ഉപഗ്രഹ HD",
+  "Hybrid HD": "ഹൈബ്രിഡ് HD",
+  "Area (15x)": "പ്രദേശം (15x)",
+  "Parcel (18x)": "പാഴ്സൽ (18x)",
+  "HD Boundary (21.5x)": "HD അതിർത്തി (21.5x)",
+  "Ultra HD (Sub-Meter)": "അൾട്രാ HD (ഉപ-മീറ്റർ)",
+  "HD Scale": "HD സ്കെയിൽ",
+  "Zoom In": "സൂം ഇൻ",
+  "Zoom Out": "സൂം ഔട്ട്"
 }

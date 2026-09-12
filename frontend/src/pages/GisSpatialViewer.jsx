@@ -48,6 +48,7 @@ function FlyToSearch({ target }) {
 
 
 
+
 // User Location Recenter Helper
 function FlyToLocation({ location, locationKey }) {
   const map = useMap();
@@ -365,11 +366,15 @@ export const GisSpatialViewer = () => {
   const tileLayerConfig = {
     osm: {
       url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap India</a>'
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap India</a>',
+      maxNativeZoom: 19,
+      maxZoom: 22
     },
     satellite: {
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      attribution: '&copy; Esri World Imagery'
+      attribution: '&copy; Esri World Imagery',
+      maxNativeZoom: 19,
+      maxZoom: 22
     }
   };
 
@@ -673,7 +678,17 @@ export const GisSpatialViewer = () => {
           <Crosshair className={`w-6 h-6 ${isLocating ? 'animate-spin text-amber-400' : 'group-hover:rotate-45 transition-transform duration-300'}`} />
         </button>
 
-        <MapContainer center={mapCenter} zoom={mapZoom} className="w-full h-full" ref={setMapInstance}>
+        <MapContainer
+          center={mapCenter}
+          zoom={mapZoom}
+          minZoom={3}
+          maxZoom={22}
+          zoomSnap={0.5}
+          zoomDelta={0.5}
+          wheelPxPerZoomLevel={100}
+          className="w-full h-full"
+          ref={setMapInstance}
+        >
           <FlyToSearch target={searchTarget} />
           <MapLocationTrigger 
             locateTrigger={locateTrigger} 
@@ -683,8 +698,11 @@ export const GisSpatialViewer = () => {
           />
           <TileLayer
             key={mapStyle}
-            attribution={tileLayerConfig[mapStyle].attribution}
-            url={tileLayerConfig[mapStyle].url}
+            attribution={tileLayerConfig[mapStyle]?.attribution || tileLayerConfig.osm.attribution}
+            url={tileLayerConfig[mapStyle]?.url || tileLayerConfig.osm.url}
+            maxZoom={22}
+            maxNativeZoom={tileLayerConfig[mapStyle]?.maxNativeZoom || 19}
+            keepBuffer={8}
           />
 
           {/* Render Parcel Polygons with Exact Bounds */}

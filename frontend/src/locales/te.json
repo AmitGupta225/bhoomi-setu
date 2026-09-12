@@ -1804,5 +1804,15 @@
   "Mandatory Field Missing: Khata Number cannot be empty.": "తప్పనిసరి ఫీల్డ్ లేదు: ఖాతా నంబర్ ఖాళీగా ఉండకూడదు.",
   "Mandatory Field Missing: Village name cannot be empty.": "తప్పనిసరి ఫీల్డ్ లేదు: గ్రామం పేరు ఖాళీగా ఉండకూడదు.",
   "Mandatory Field Missing: Primary Landowner Name cannot be empty.": "తప్పనిసరి ఫీల్డ్ లేదు: భూయజమాని పేరు ఖాళీగా ఉండకూడదు.",
-  "Mandatory Field Missing: A valid land boundary polygon must have at least 3 corner vertices.": "తప్పనిసరి ఫీల్డ్ లేదు: కనీసం 3 శీర్షాలు అవసరం."
+  "Mandatory Field Missing: A valid land boundary polygon must have at least 3 corner vertices.": "తప్పనిసరి ఫీల్డ్ లేదు: కనీసం 3 శీర్షాలు అవసరం.",
+  "Standard HD": "ప్రామాణిక HD",
+  "Satellite HD": "శాటిలైట్ HD",
+  "Hybrid HD": "హైబ్రిడ్ HD",
+  "Area (15x)": "ప్రాంతం (15x)",
+  "Parcel (18x)": "పార్సెల్ (18x)",
+  "HD Boundary (21.5x)": "HD సరిహద్దు (21.5x)",
+  "Ultra HD (Sub-Meter)": "అల్ట్రా HD (సబ్-మీటర్)",
+  "HD Scale": "HD స్కేల్",
+  "Zoom In": "జూమ్ ఇన్",
+  "Zoom Out": "జూమ్ అవుట్"
 }
