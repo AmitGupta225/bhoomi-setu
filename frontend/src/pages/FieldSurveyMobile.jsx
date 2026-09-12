@@ -193,7 +193,7 @@ function extractPolygonCoordinates(p) {
 }
 
 export const FieldSurveyMobile = () => {
-  const { activeRole, selectedProjectId, t } = useAuth();
+  const { activeRole, selectedProjectId, t, addNotification } = useAuth();
   const [parcels, setParcels] = useState([]);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -232,15 +232,15 @@ export const FieldSurveyMobile = () => {
   const [inspNotes, setInspNotes] = useState('');
   const [inspLoading, setInspLoading] = useState(false);
 
-  // Multi-Vertex Parcel Creation State
+  // Multi-Vertex Parcel Creation State (Clean empty initial values)
   const [newProjId, setNewProjId] = useState(selectedProjectId || '');
-  const [newSurveyNo, setNewSurveyNo] = useState('204/3A');
-  const [newKhataNo, setNewKhataNo] = useState('KH-5510');
-  const [newVillage, setNewVillage] = useState(() => t('Manor Farm Zone'));
-  const [newLandType, setNewLandType] = useState(() => t('Irrigated Agricultural Farm'));
-  const [newOwnerName, setNewOwnerName] = useState(() => t('Anil Kumar Patil'));
-  const [newOwnerContact, setNewOwnerContact] = useState('+91 98221 44500');
-  const [newAddress, setNewAddress] = useState(() => t('Plot No. 47, GT Road'));
+  const [newSurveyNo, setNewSurveyNo] = useState('');
+  const [newKhataNo, setNewKhataNo] = useState('');
+  const [newVillage, setNewVillage] = useState('');
+  const [newLandType, setNewLandType] = useState('Irrigated Agricultural Farm');
+  const [newOwnerName, setNewOwnerName] = useState('');
+  const [newOwnerContact, setNewOwnerContact] = useState('');
+  const [newAddress, setNewAddress] = useState('');
   const [customLat, setCustomLat] = useState('19.7285');
   const [customLng, setCustomLng] = useState('72.8455');
   const [manualAreaHa, setManualAreaHa] = useState(null);
@@ -694,6 +694,15 @@ export const FieldSurveyMobile = () => {
       setNewOwnerContact('');
       setNewAddress('');
       setVertices([]);
+      setManualAreaHa(null);
+      setSearchTarget(null);
+      setInspFamilies('');
+      setInspFamilyMembers('');
+      setInspStructures('');
+      setInspTrees('');
+      setInspNotes('');
+      setInspTribal(false);
+      setInspConsent(false);
       return;
     }
     const p = parcels.find(x => x.id === parcelId);
@@ -808,32 +817,67 @@ export const FieldSurveyMobile = () => {
       return;
     }
 
+    if (!newProjId) {
+      alert(t('Mandatory Field Missing: Please select an active project before plotting a parcel.'));
+      return;
+    }
+
     const activeProject = projects.find(p => p.id === newProjId);
     if (activeProject && activeProject.current_stage_id < 4) {
       alert('Pipeline Restriction: Field Surveys legally restricted until Section 11 Preliminary Notification (Stage 4) is published.');
       return;
     }
 
+    // Strict Mandatory Field Validation
+    if (!newSurveyNo.trim()) {
+      alert(t('Mandatory Field Missing: Survey / Khasra / Plot Number is required.'));
+      return;
+    }
+    if (!newKhataNo.trim()) {
+      alert(t('Mandatory Field Missing: Khata Number is required.'));
+      return;
+    }
+    if (!newVillage.trim()) {
+      alert(t('Mandatory Field Missing: Village / Settlement name is required.'));
+      return;
+    }
+    if (!newLandType.trim()) {
+      alert(t('Mandatory Field Missing: Land Category is required.'));
+      return;
+    }
+    if (!newOwnerName.trim()) {
+      alert(t('Mandatory Field Missing: Primary Landowner Name is required.'));
+      return;
+    }
+    const cleanedPhone = newOwnerContact.replace(/\D/g, '');
+    if (!newOwnerContact.trim() || cleanedPhone.length < 10) {
+      alert(t('Mandatory Field Missing: A valid 10-digit Owner Contact Phone Number is required.'));
+      return;
+    }
     if (vertices.length < 3) {
-      alert('A valid land boundary polygon must have at least 3 corner vertices.');
+      alert(t('Mandatory Field Missing: A valid land boundary polygon must have at least 3 corner vertices plotted on the map.'));
       return;
     }
 
     const calculatedAreaHaRaw = parseFloat(calculatePolygonAreaHa(vertices));
     const finalAreaHa = manualAreaHa !== null && manualAreaHa !== '' ? parseFloat(manualAreaHa) : calculatedAreaHaRaw;
+    if (!finalAreaHa || finalAreaHa <= 0) {
+      alert(t('Mandatory Field Missing: Parcel Area must be greater than 0 Hectares.'));
+      return;
+    }
 
     const provisionalUlpin = `IN-MH-OFF-${Date.now().toString().slice(-6)}`;
     const parcelPayload = {
       project_id: newProjId,
       ulpin: provisionalUlpin,
-      survey_number: newSurveyNo,
-      khata_number: newKhataNo,
-      village: newVillage,
-      land_type: newLandType,
-      owner_name: newOwnerName,
-      owner_contact: newOwnerContact,
-      address: newAddress,
-      area_ha: finalAreaHa > 0 ? finalAreaHa : 1.25,
+      survey_number: newSurveyNo.trim(),
+      khata_number: newKhataNo.trim(),
+      village: newVillage.trim(),
+      land_type: newLandType.trim(),
+      owner_name: newOwnerName.trim(),
+      owner_contact: newOwnerContact.trim(),
+      address: newAddress.trim(),
+      area_ha: finalAreaHa,
       coordinates: vertices.map(v => [v.lat, v.lng]),
       vertices: vertices,
       lat: vertices[0].lat,
@@ -855,14 +899,7 @@ export const FieldSurveyMobile = () => {
         status: 'Verified'
       };
       setParcels(prev => [localParcel, ...prev]);
-      setVertices([]);
-      setManualAreaHa(null);
-      setInspFamilies('');
-      setInspFamilyMembers('');
-      setInspStructures('');
-      setInspTrees('');
-      setInspNotes('');
-      setInspParcelId('');
+      handleSelectExistingParcel('');
       setSubmitSuccess(t('✓ Parcel & Inspection saved locally! Will sync automatically when back online.'));
       setTimeout(() => setSubmitSuccess(''), 7000);
       await refreshOutbox();
@@ -874,7 +911,7 @@ export const FieldSurveyMobile = () => {
       if (res.success) {
         try {
           await submitFieldSurvey(res.id, {
-            land_type: newLandType,
+            land_type: newLandType.trim(),
             affected_families: parseInt(inspFamilies) || 0,
             family_members: parseInt(inspFamilyMembers) || 0,
             family_category: inspFamilyCategory,
@@ -889,16 +926,16 @@ export const FieldSurveyMobile = () => {
         }
 
         setSubmitSuccess(`New Parcel (ULPIN: ${res.ulpin}) & LARR Report created successfully!`);
-        const pList = await fetchParcels();
-        setParcels(pList);
-        setVertices([]);
-        setManualAreaHa(null);
-        setInspFamilies('');
-        setInspFamilyMembers('');
-        setInspStructures('');
-        setInspTrees('');
-        setInspNotes('');
-        setInspParcelId('');
+        // Refresh ONLY parcels for the selected project, avoiding cross-project parcel pollution
+        const pList = await fetchParcels(selectedProjectId ? { project_id: selectedProjectId } : {});
+        setParcels(pList || []);
+        handleSelectExistingParcel(''); // Clean reset of form & vertices
+        if (addNotification) {
+          addNotification(
+            `✓ New Parcel mapped: ${res.ulpin} (Plot #${newSurveyNo.trim()}, ${newVillage.trim()}) by ${activeRole?.label || 'Field Surveyor'}`,
+            'ALL'
+          );
+        }
         setTimeout(() => setSubmitSuccess(''), 5000);
       }
     } catch (err) {
@@ -910,14 +947,7 @@ export const FieldSurveyMobile = () => {
         status: 'Verified'
       };
       setParcels(prev => [localParcel, ...prev]);
-      setVertices([]);
-      setManualAreaHa(null);
-      setInspFamilies('');
-      setInspFamilyMembers('');
-      setInspStructures('');
-      setInspTrees('');
-      setInspNotes('');
-      setInspParcelId('');
+      handleSelectExistingParcel('');
       setSubmitSuccess(t('✓ Saved to offline storage! Will sync automatically when connection returns.'));
       setTimeout(() => setSubmitSuccess(''), 7000);
       await refreshOutbox();
@@ -927,22 +957,53 @@ export const FieldSurveyMobile = () => {
   const handleUpdateParcel = async (e) => {
     if (e) e.preventDefault();
     if (!inspParcelId) return;
+
+    // Strict Mandatory Field Validation
+    if (!newSurveyNo.trim()) {
+      alert(t('Mandatory Field Missing: Survey / Khasra Number cannot be empty.'));
+      return;
+    }
+    if (!newKhataNo.trim()) {
+      alert(t('Mandatory Field Missing: Khata Number cannot be empty.'));
+      return;
+    }
+    if (!newVillage.trim()) {
+      alert(t('Mandatory Field Missing: Village name cannot be empty.'));
+      return;
+    }
+    if (!newLandType.trim()) {
+      alert(t('Mandatory Field Missing: Land Category is required.'));
+      return;
+    }
+    if (!newOwnerName.trim()) {
+      alert(t('Mandatory Field Missing: Primary Landowner Name cannot be empty.'));
+      return;
+    }
+    const cleanedPhone = newOwnerContact.replace(/\D/g, '');
+    if (!newOwnerContact.trim() || cleanedPhone.length < 10) {
+      alert(t('Mandatory Field Missing: A valid 10-digit Owner Contact Phone Number is required.'));
+      return;
+    }
     if (vertices.length < 3) {
-      alert(t('A valid land boundary polygon must have at least 3 corner vertices.'));
+      alert(t('Mandatory Field Missing: A valid land boundary polygon must have at least 3 corner vertices.'));
       return;
     }
     const calculatedAreaHaRaw = parseFloat(calculatePolygonAreaHa(vertices));
     const finalAreaHa = manualAreaHa !== null && manualAreaHa !== '' ? parseFloat(manualAreaHa) : calculatedAreaHaRaw;
+    if (!finalAreaHa || finalAreaHa <= 0) {
+      alert(t('Mandatory Field Missing: Parcel Area must be greater than 0 Hectares.'));
+      return;
+    }
 
     try {
       const res = await updateParcel(inspParcelId, {
-        survey_number: newSurveyNo,
-        khata_number: newKhataNo,
-        village: newVillage,
-        land_type: newLandType,
-        owner_name: newOwnerName,
-        owner_contact: newOwnerContact,
-        area_ha: finalAreaHa > 0 ? finalAreaHa : undefined,
+        survey_number: newSurveyNo.trim(),
+        khata_number: newKhataNo.trim(),
+        village: newVillage.trim(),
+        land_type: newLandType.trim(),
+        owner_name: newOwnerName.trim(),
+        owner_contact: newOwnerContact.trim(),
+        area_ha: finalAreaHa,
         vertices: vertices,
         lat: vertices[0]?.lat,
         lng: vertices[0]?.lng,
@@ -954,6 +1015,12 @@ export const FieldSurveyMobile = () => {
         setSubmitSuccess(t(`✓ Parcel ${res.data?.ulpin || ''} updated successfully!`));
         const pList = await fetchParcels(selectedProjectId ? { project_id: selectedProjectId } : {});
         setParcels(pList || []);
+        if (addNotification) {
+          addNotification(
+            `✓ Parcel ${res.data?.ulpin || inspParcelId} (Plot #${newSurveyNo.trim()}) updated by ${activeRole?.label || 'Field Surveyor'}`,
+            'ALL'
+          );
+        }
         setTimeout(() => setSubmitSuccess(''), 5000);
       }
     } catch (err) {
@@ -975,7 +1042,16 @@ export const FieldSurveyMobile = () => {
       if (res && res.success) {
         setSubmitSuccess(t(`✓ Parcel ${ulpin} deleted successfully!`));
         setParcels(prev => prev.filter(x => x.id !== inspParcelId));
-        handleSelectExistingParcel(''); // Reset form to create new mode
+        handleSelectExistingParcel(''); // Clean reset to create new mode
+        // Refresh project-scoped parcels to ensure clean sync with DB
+        const pList = await fetchParcels(selectedProjectId ? { project_id: selectedProjectId } : {});
+        setParcels(pList || []);
+        if (addNotification) {
+          addNotification(
+            `⚠️ Parcel ${ulpin} (Plot #${survey}) permanently deleted by ${activeRole?.label || 'Field Surveyor'}`,
+            'ALL'
+          );
+        }
         setTimeout(() => setSubmitSuccess(''), 5000);
       }
     } catch (err) {
@@ -1373,9 +1449,15 @@ export const FieldSurveyMobile = () => {
         {/* VERTEX CONTROL SECTION */}
             <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-2xl space-y-3">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <span className="font-semibold text-slate-300 flex items-center gap-1.5">
+                <span className="font-semibold text-slate-300 flex items-center gap-1.5 flex-wrap">
                   <Compass className="w-4 h-4 text-cyan-400" />
                   <span>{t('Boundary Vertices')} ({vertices.length} {t('Points')})</span>
+                  <span className="text-rose-400 font-bold text-xs" title={t('At least 3 points required')}>*</span>
+                  {vertices.length < 3 && (
+                    <span className="text-[10px] bg-rose-950/60 border border-rose-500/30 text-rose-300 px-1.5 py-0.5 rounded font-medium">
+                      {t('Min 3 points required')}
+                    </span>
+                  )}
                 </span>
 
                 <div className="flex items-center gap-2">
@@ -1563,39 +1645,61 @@ export const FieldSurveyMobile = () => {
 <h3 className="text-sm font-bold text-slate-300 border-b border-slate-700 pb-2 mb-4">{t('Land & Owner Details')}</h3>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-slate-400 mb-1 block">{t('Survey Number:')}</label>
+                <label className="text-slate-400 mb-1 block flex items-center gap-1">
+                  <span>{t('Survey Number:')}</span>
+                  <span className="text-rose-400 font-bold text-xs" title={t('Mandatory field')}>*</span>
+                </label>
                 <input
                   type="text"
+                  required
+                  placeholder="e.g. 204/3A"
                   value={newSurveyNo}
-                  onChange={(e) =>setNewSurveyNo(e.target.value)}
+                  onChange={(e) => setNewSurveyNo(e.target.value)}
                   className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-mono"
-                /></div>
+                />
+              </div>
               <div>
-                <label className="text-slate-400 mb-1 block">{t('Khata Number:')}</label>
+                <label className="text-slate-400 mb-1 block flex items-center gap-1">
+                  <span>{t('Khata Number:')}</span>
+                  <span className="text-rose-400 font-bold text-xs" title={t('Mandatory field')}>*</span>
+                </label>
                 <input
                   type="text"
+                  required
+                  placeholder="e.g. KH-5510"
                   value={newKhataNo}
-                  onChange={(e) =>setNewKhataNo(e.target.value)}
+                  onChange={(e) => setNewKhataNo(e.target.value)}
                   className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-mono"
-                /></div>
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-slate-400 mb-1 block">{t('Village / Settlement:')}</label>
+                <label className="text-slate-400 mb-1 block flex items-center gap-1">
+                  <span>{t('Village / Settlement:')}</span>
+                  <span className="text-rose-400 font-bold text-xs" title={t('Mandatory field')}>*</span>
+                </label>
                 <input
                   type="text"
+                  required
+                  placeholder="e.g. Boisar"
                   value={newVillage}
-                  onChange={(e) =>setNewVillage(e.target.value)}
+                  onChange={(e) => setNewVillage(e.target.value)}
                   className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"
-                /></div>
+                />
+              </div>
               <div>
-                <label className="text-slate-400 mb-1 block">{t('Land Category:')}</label>
+                <label className="text-slate-400 mb-1 block flex items-center gap-1">
+                  <span>{t('Land Category:')}</span>
+                  <span className="text-rose-400 font-bold text-xs" title={t('Mandatory field')}>*</span>
+                </label>
                 <select
                   value={newLandType}
-                  onChange={(e) =>setNewLandType(e.target.value)}
+                  onChange={(e) => setNewLandType(e.target.value)}
                   className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"
-                ><option value="Suburban Residential House">{t('Suburban Residential House')}</option>
+                >
+                  <option value="Suburban Residential House">{t('Suburban Residential House')}</option>
                   <option value="Roadside Commercial Shop">{t('Roadside Commercial Shop')}</option>
                   <option value="Irrigated Agricultural Farm">{t('Irrigated Agricultural Farm')}</option>
                   <option value="Fruit Orchard Estate">{t('Fruit Orchard Estate')}</option>
@@ -1607,21 +1711,33 @@ export const FieldSurveyMobile = () => {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-slate-400 mb-1 block">{t('Primary Landowner Name:')}</label>
+                <label className="text-slate-400 mb-1 block flex items-center gap-1">
+                  <span>{t('Primary Landowner Name:')}</span>
+                  <span className="text-rose-400 font-bold text-xs" title={t('Mandatory field')}>*</span>
+                </label>
                 <input
                   type="text"
+                  required
+                  placeholder="e.g. Anil Kumar Patil"
                   value={newOwnerName}
-                  onChange={(e) =>setNewOwnerName(e.target.value)}
+                  onChange={(e) => setNewOwnerName(e.target.value)}
                   className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"
-                /></div>
+                />
+              </div>
               <div>
-                <label className="text-slate-400 mb-1 block">{t('Owner Contact Phone:')}</label>
+                <label className="text-slate-400 mb-1 block flex items-center gap-1">
+                  <span>{t('Owner Contact Phone:')}</span>
+                  <span className="text-rose-400 font-bold text-xs" title={t('Mandatory field')}>*</span>
+                </label>
                 <input
                   type="text"
+                  required
+                  placeholder="e.g. 9822144500"
                   value={newOwnerContact}
-                  onChange={(e) =>setNewOwnerContact(e.target.value)}
+                  onChange={(e) => setNewOwnerContact(e.target.value)}
                   className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"
-                /></div>
+                />
+              </div>
             </div>
 
             <div className="mb-4">

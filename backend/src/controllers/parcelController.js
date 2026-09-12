@@ -93,6 +93,33 @@ export const handler_9 = async (req, res) => {
       area_ha, land_type, owner_name, owner_contact, vertices, lat, lng
     } = req.body;
 
+    if (!project_id) {
+      return res.status(400).json({ success: false, error: 'Project ID is required.' });
+    }
+    if (!survey_number || !survey_number.trim()) {
+      return res.status(400).json({ success: false, error: 'Survey / Khasra / Plot Number is required.' });
+    }
+    if (!khata_number || !khata_number.trim()) {
+      return res.status(400).json({ success: false, error: 'Khata Number is required.' });
+    }
+    if (!village || !village.trim()) {
+      return res.status(400).json({ success: false, error: 'Village / Settlement name is required.' });
+    }
+    if (!owner_name || !owner_name.trim()) {
+      return res.status(400).json({ success: false, error: 'Primary Landowner name is required.' });
+    }
+    const cleanPhone = (owner_contact || '').replace(/\D/g, '');
+    if (!owner_contact || !owner_contact.trim() || cleanPhone.length < 10) {
+      return res.status(400).json({ success: false, error: 'A valid 10-digit owner contact phone number is required.' });
+    }
+    if (!vertices || !Array.isArray(vertices) || vertices.length < 3) {
+      return res.status(400).json({ success: false, error: 'A valid parcel boundary requires at least 3 GPS vertices.' });
+    }
+    const parsedArea = parseFloat(area_ha);
+    if (isNaN(parsedArea) || parsedArea <= 0) {
+      return res.status(400).json({ success: false, error: 'Parcel area (Ha) must be greater than 0.' });
+    }
+
     const proj = await queryOne(`SELECT * FROM projects WHERE id = ?`, [project_id]);
     const statePrefix = proj ? proj.state.slice(0, 2).toUpperCase() : 'IN';
     const distPrefix = proj ? proj.district.slice(0, 3).toUpperCase() : 'DIS';
@@ -113,7 +140,7 @@ export const handler_9 = async (req, res) => {
 
     const geojson = JSON.stringify({
       type: 'Feature',
-      properties: { survey: survey_number, owner: owner_name, area: `${area_ha} Ha (${land_type})` },
+      properties: { survey: survey_number.trim(), owner: owner_name.trim(), area: `${parsedArea} Ha (${land_type || 'Agricultural Field'})` },
       geometry: {
         type: 'Polygon',
         coordinates: [formattedVertices]
@@ -128,16 +155,16 @@ export const handler_9 = async (req, res) => {
       `INSERT INTO parcels (id, ulpin, project_id, survey_number, khata_number, village, tehsil, district, state, area_ha, land_type, owner_name, owner_aadhaar_hash, owner_contact, market_rate_sqm, statutory_multiplier, status, geojson, lat, lng)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        id, ulpin, project_id, survey_number, khata_number || 'KH-NEW',
-        village || (proj ? proj.district : 'Village'), tehsil || (proj ? proj.district : 'Tehsil'),
+        id, ulpin, project_id, survey_number.trim(), khata_number.trim(),
+        village.trim(), tehsil || (proj ? proj.district : 'Tehsil'),
         district || (proj ? proj.district : 'District'), state || (proj ? proj.state : 'State'),
-        area_ha || 1.0, land_type || 'Agricultural Field', owner_name || 'Landowner',
-        '9999-XXXX-1111', owner_contact || '+91 98765 43210', market_rate_sqm,
+        parsedArea, land_type || 'Agricultural Field', owner_name.trim(),
+        '9999-XXXX-1111', owner_contact.trim(), market_rate_sqm,
         statutory_multiplier, status, geojson, lat || vertices[0].lat, lng || vertices[0].lng
       ]
     );
 
-    const baseValue = (area_ha || 1.0) * 10000 * market_rate_sqm;
+    const baseValue = parsedArea * 10000 * market_rate_sqm;
     const multipliedValue = baseValue * statutory_multiplier;
     const structureAssets = baseValue * 0.15;
     const solatium = multipliedValue + structureAssets;
@@ -152,8 +179,18 @@ export const handler_9 = async (req, res) => {
 
     await run(
       `INSERT INTO audit_logs (user_role, user_name, action, details) VALUES (?, ?, ?, ?)`,
-      ['Field Surveyor', owner_name || 'Field Surveyor', 'Created New Multi-Vertex Land Parcel', `Mapped Survey ${survey_number} ULPIN ${ulpin} (${area_ha} Ha)`]
+      ['Field Surveyor', owner_name.trim() || 'Field Surveyor', 'Created New Multi-Vertex Land Parcel', `Mapped Survey ${survey_number.trim()} ULPIN ${ulpin} (${parsedArea} Ha)`]
     );
+
+    // Broadcast Real-time In-App Notification
+    try {
+      await run(
+        `INSERT INTO auth.notifications (text, target_role, unread) VALUES (?, ?, 1)`,
+        [`[New Parcel Mapped] Plot #${survey_number.trim()} (${ulpin}) in ${village.trim()} created by ${owner_name.trim() || 'Field Surveyor'}`, 'ALL']
+      );
+    } catch (notifErr) {
+      console.warn('Failed to insert notification for new parcel:', notifErr.message);
+    }
 
     res.json({ success: true, message: 'New multi-vertex land parcel created successfully', parcelId: id, ulpin });
   } catch (err) {
@@ -173,6 +210,33 @@ export const handler_update_parcel = async (req, res) => {
     const existing = await queryOne(`SELECT * FROM parcels WHERE id = ?`, [id]);
     if (!existing) return res.status(404).json({ success: false, error: 'Parcel not found' });
 
+    if (survey_number !== undefined && !survey_number.trim()) {
+      return res.status(400).json({ success: false, error: 'Survey Number cannot be empty.' });
+    }
+    if (khata_number !== undefined && !khata_number.trim()) {
+      return res.status(400).json({ success: false, error: 'Khata Number cannot be empty.' });
+    }
+    if (village !== undefined && !village.trim()) {
+      return res.status(400).json({ success: false, error: 'Village name cannot be empty.' });
+    }
+    if (owner_name !== undefined && !owner_name.trim()) {
+      return res.status(400).json({ success: false, error: 'Landowner name cannot be empty.' });
+    }
+    if (owner_contact !== undefined) {
+      const cleanPhone = owner_contact.replace(/\D/g, '');
+      if (!owner_contact.trim() || cleanPhone.length < 10) {
+        return res.status(400).json({ success: false, error: 'A valid 10-digit owner contact phone number is required.' });
+      }
+    }
+    if (vertices !== undefined) {
+      if (!Array.isArray(vertices) || vertices.length < 3) {
+        return res.status(400).json({ success: false, error: 'A valid parcel boundary requires at least 3 GPS vertices.' });
+      }
+    }
+    if (area_ha !== undefined && (isNaN(parseFloat(area_ha)) || parseFloat(area_ha) <= 0)) {
+      return res.status(400).json({ success: false, error: 'Parcel area (Ha) must be greater than 0.' });
+    }
+
     let geojson = existing.geojson;
     if (vertices && Array.isArray(vertices) && vertices.length >= 3) {
       let formattedVertices = vertices.map(v => [v.lng, v.lat]);
@@ -183,8 +247,8 @@ export const handler_update_parcel = async (req, res) => {
       geojson = JSON.stringify({
         type: 'Feature',
         properties: {
-          survey: survey_number || existing.survey_number,
-          owner: owner_name || existing.owner_name,
+          survey: survey_number ? survey_number.trim() : existing.survey_number,
+          owner: owner_name ? owner_name.trim() : existing.owner_name,
           area: `${area_ha || existing.area_ha} Ha (${land_type || existing.land_type})`
         },
         geometry: {
@@ -215,8 +279,13 @@ export const handler_update_parcel = async (req, res) => {
         lng = ?
       WHERE id = ?`,
       [
-        survey_number, khata_number, village, tehsil, district, state,
-        updatedAreaHa, land_type, owner_name, owner_contact,
+        survey_number ? survey_number.trim() : null,
+        khata_number ? khata_number.trim() : null,
+        village ? village.trim() : null,
+        tehsil, district, state,
+        updatedAreaHa, land_type,
+        owner_name ? owner_name.trim() : null,
+        owner_contact ? owner_contact.trim() : null,
         geojson, finalLat, finalLng, id
       ]
     );
@@ -245,6 +314,16 @@ export const handler_update_parcel = async (req, res) => {
       `INSERT INTO audit_logs (user_role, user_name, action, details) VALUES (?, ?, ?, ?)`,
       [role || 'Field Surveyor', user_name || 'Cadastral Surveyor', 'Edited Land Parcel Boundary & Details', `Updated plot ${id} (${existing.ulpin})`]
     );
+
+    // Broadcast Real-time In-App Notification
+    try {
+      await run(
+        `INSERT INTO auth.notifications (text, target_role, unread) VALUES (?, ?, 1)`,
+        [`[Parcel Modified] Plot #${survey_number ? survey_number.trim() : existing.survey_number} (${existing.ulpin}) in ${village ? village.trim() : existing.village} updated by ${user_name || role || 'Field Surveyor'}`, 'ALL']
+      );
+    } catch (notifErr) {
+      console.warn('Failed to insert notification for parcel update:', notifErr.message);
+    }
 
     const updatedRow = await queryOne(`SELECT * FROM parcels WHERE id = ?`, [id]);
     res.json({
@@ -278,6 +357,16 @@ export const handler_delete_parcel = async (req, res) => {
       `INSERT INTO audit_logs (user_role, user_name, action, details) VALUES (?, ?, ?, ?)`,
       [role || 'Field Surveyor', user_name || 'Cadastral Surveyor', 'Deleted Land Parcel', `Permanently deleted parcel ${id} (${existing.ulpin}, Survey: ${existing.survey_number})`]
     );
+
+    // Broadcast Real-time In-App Notification
+    try {
+      await run(
+        `INSERT INTO auth.notifications (text, target_role, unread) VALUES (?, ?, 1)`,
+        [`[Parcel Deleted] Plot #${existing.survey_number} (${existing.ulpin}) in ${existing.village} permanently deleted by ${user_name || role || 'Field Surveyor'}`, 'ALL']
+      );
+    } catch (notifErr) {
+      console.warn('Failed to insert notification for parcel delete:', notifErr.message);
+    }
 
     res.json({
       success: true,
