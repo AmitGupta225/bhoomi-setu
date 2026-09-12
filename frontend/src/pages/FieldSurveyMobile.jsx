@@ -171,6 +171,27 @@ function calculatePolygonAreaHa(vertices) {
   return (sqMeters / 10000).toFixed(2);
 }
 
+// Safely extract [lat, lng] array from parcel coordinates or GeoJSON for Leaflet rendering
+function extractPolygonCoordinates(p) {
+  if (!p) return null;
+  if (Array.isArray(p.coordinates) && p.coordinates.length >= 3) {
+    return p.coordinates;
+  }
+  if (p.geojson) {
+    try {
+      const geo = typeof p.geojson === 'string' ? JSON.parse(p.geojson) : p.geojson;
+      const geom = geo.geometry || geo;
+      if (geom && geom.coordinates && Array.isArray(geom.coordinates[0])) {
+        // GeoJSON standard is [lng, lat], Leaflet Polygon expects [lat, lng]
+        return geom.coordinates[0].map(pt => [pt[1], pt[0]]);
+      }
+    } catch (e) {
+      console.warn('Failed to parse parcel geojson coordinates:', e);
+    }
+  }
+  return null;
+}
+
 export const FieldSurveyMobile = () => {
   const { activeRole, selectedProjectId, t } = useAuth();
   const [parcels, setParcels] = useState([]);
@@ -201,11 +222,11 @@ export const FieldSurveyMobile = () => {
   const [inspParcelId, setInspParcelId] = useState('');
   const [inspLandCondition, setInspLandCondition] = useState('Vacant Land');
   const [inspLandType, setInspLandType] = useState('Unirrigated');
-  const [inspFamilies, setInspFamilies] = useState(0);
+  const [inspFamilies, setInspFamilies] = useState('');
   const [inspFamilyCategory, setInspFamilyCategory] = useState("General");
-  const [inspFamilyMembers, setInspFamilyMembers] = useState(0);
-  const [inspStructures, setInspStructures] = useState(0);
-  const [inspTrees, setInspTrees] = useState(0);
+  const [inspFamilyMembers, setInspFamilyMembers] = useState('');
+  const [inspStructures, setInspStructures] = useState('');
+  const [inspTrees, setInspTrees] = useState('');
   const [inspTribal, setInspTribal] = useState(false);
   const [inspConsent, setInspConsent] = useState(false);
   const [inspNotes, setInspNotes] = useState('');
@@ -690,7 +711,13 @@ export const FieldSurveyMobile = () => {
           const geoData = typeof p.geojson === 'string' ? JSON.parse(p.geojson) : p.geojson;
           const pGeom = geoData?.geometry || geoData;
           if (pGeom?.coordinates && pGeom.coordinates[0]) {
-             const parsed = pGeom.coordinates[0].map(pt => ({ lat: pt[1], lng: pt[0] }));
+             let parsed = pGeom.coordinates[0].map(pt => ({ lat: pt[1], lng: pt[0] }));
+             // Strip trailing duplicate closing point from GeoJSON LinearRing if present
+             if (parsed.length > 1 && 
+                 Math.abs(parsed[0].lat - parsed[parsed.length - 1].lat) < 0.000001 && 
+                 Math.abs(parsed[0].lng - parsed[parsed.length - 1].lng) < 0.000001) {
+               parsed = parsed.slice(0, -1);
+             }
              if (parsed.length > 0) {
                  setVertices(parsed);
                  setSearchTarget({ lat: parsed[0].lat, lng: parsed[0].lng });
@@ -723,11 +750,11 @@ export const FieldSurveyMobile = () => {
       gps_lng: userLocation ? userLocation.lng : p.lng,
       land_condition: inspLandCondition,
       land_type: inspLandType,
-      affected_families_count: inspFamilies,
-      structures_count: inspStructures,
-      trees_count: inspTrees,
+      affected_families_count: parseInt(inspFamilies) || 0,
+      structures_count: parseInt(inspStructures) || 0,
+      trees_count: parseInt(inspTrees) || 0,
       family_category: inspFamilyCategory,
-      family_members_count: inspFamilyMembers,
+      family_members_count: parseInt(inspFamilyMembers) || 0,
       is_tribal_land: inspTribal,
       consent_obtained: inspConsent,
       verification_notes: inspNotes
@@ -738,6 +765,11 @@ export const FieldSurveyMobile = () => {
       setSubmitSuccess(t('Offline Mode: Inspection saved to local Outbox! Will auto-sync when online.'));
       setTimeout(() => setSubmitSuccess(''), 6000);
       setInspParcelId('');
+      setInspFamilies('');
+      setInspFamilyMembers('');
+      setInspStructures('');
+      setInspTrees('');
+      setInspNotes('');
       await refreshOutbox();
       setInspLoading(false);
       return;
@@ -748,12 +780,22 @@ export const FieldSurveyMobile = () => {
       setSubmitSuccess(t('Field Inspection Report Submitted!'));
       setTimeout(() => setSubmitSuccess(''), 5000);
       setInspParcelId('');
+      setInspFamilies('');
+      setInspFamilyMembers('');
+      setInspStructures('');
+      setInspTrees('');
+      setInspNotes('');
     } catch (err) {
       console.warn('Online submission failed, falling back to local outbox:', err);
       await queueOfflineSurvey(surveyPayload, 'INSPECTION');
       setSubmitSuccess(t('Network unreachable. Inspection safely queued to offline outbox!'));
       setTimeout(() => setSubmitSuccess(''), 6000);
       setInspParcelId('');
+      setInspFamilies('');
+      setInspFamilyMembers('');
+      setInspStructures('');
+      setInspTrees('');
+      setInspNotes('');
       await refreshOutbox();
     }
     setInspLoading(false);
@@ -797,9 +839,9 @@ export const FieldSurveyMobile = () => {
       lat: vertices[0].lat,
       lng: vertices[0].lng,
       surveyor_name: activeRole?.label || 'Field Surveyor',
-      affected_families_count: inspFamilies,
-      structures_count: inspStructures,
-      trees_count: inspTrees,
+      affected_families_count: parseInt(inspFamilies) || 0,
+      structures_count: parseInt(inspStructures) || 0,
+      trees_count: parseInt(inspTrees) || 0,
       is_tribal_land: inspTribal,
       consent_obtained: inspConsent,
       verification_notes: inspNotes
@@ -813,6 +855,14 @@ export const FieldSurveyMobile = () => {
         status: 'Verified'
       };
       setParcels(prev => [localParcel, ...prev]);
+      setVertices([]);
+      setManualAreaHa(null);
+      setInspFamilies('');
+      setInspFamilyMembers('');
+      setInspStructures('');
+      setInspTrees('');
+      setInspNotes('');
+      setInspParcelId('');
       setSubmitSuccess(t('✓ Parcel & Inspection saved locally! Will sync automatically when back online.'));
       setTimeout(() => setSubmitSuccess(''), 7000);
       await refreshOutbox();
@@ -825,11 +875,11 @@ export const FieldSurveyMobile = () => {
         try {
           await submitFieldSurvey(res.id, {
             land_type: newLandType,
-            affected_families: inspFamilies,
-            family_members: inspFamilyMembers,
+            affected_families: parseInt(inspFamilies) || 0,
+            family_members: parseInt(inspFamilyMembers) || 0,
             family_category: inspFamilyCategory,
-            structures_count: inspStructures,
-            trees_count: inspTrees,
+            structures_count: parseInt(inspStructures) || 0,
+            trees_count: parseInt(inspTrees) || 0,
             tribal_land: inspTribal ? 1 : 0,
             consent_obtained: inspConsent ? 1 : 0,
             inspection_notes: inspNotes
@@ -841,6 +891,14 @@ export const FieldSurveyMobile = () => {
         setSubmitSuccess(`New Parcel (ULPIN: ${res.ulpin}) & LARR Report created successfully!`);
         const pList = await fetchParcels();
         setParcels(pList);
+        setVertices([]);
+        setManualAreaHa(null);
+        setInspFamilies('');
+        setInspFamilyMembers('');
+        setInspStructures('');
+        setInspTrees('');
+        setInspNotes('');
+        setInspParcelId('');
         setTimeout(() => setSubmitSuccess(''), 5000);
       }
     } catch (err) {
@@ -852,6 +910,14 @@ export const FieldSurveyMobile = () => {
         status: 'Verified'
       };
       setParcels(prev => [localParcel, ...prev]);
+      setVertices([]);
+      setManualAreaHa(null);
+      setInspFamilies('');
+      setInspFamilyMembers('');
+      setInspStructures('');
+      setInspTrees('');
+      setInspNotes('');
+      setInspParcelId('');
       setSubmitSuccess(t('✓ Saved to offline storage! Will sync automatically when connection returns.'));
       setTimeout(() => setSubmitSuccess(''), 7000);
       await refreshOutbox();
@@ -859,7 +925,7 @@ export const FieldSurveyMobile = () => {
   };
 
   const calculatedHa = calculatePolygonAreaHa(vertices);
-  const displayAreaHa = manualAreaHa !== null ? manualAreaHa : calculatedHa;
+  const displayAreaHa = manualAreaHa !== null ? manualAreaHa : (vertices.length >= 3 ? calculatedHa : '');
   const displayAreaParsed = displayAreaHa === '' ? 0 : parseFloat(displayAreaHa);
   const calculatedSqM = (displayAreaParsed * 10000).toLocaleString();
 
@@ -1112,17 +1178,21 @@ export const FieldSurveyMobile = () => {
 
                 {/* Existing Village Cadastral Parcels Outlines */}
                 {parcels.map((p) => {
-                  if (!p.coordinates || !Array.isArray(p.coordinates) || p.coordinates.length < 3) return null;
+                  const positions = extractPolygonCoordinates(p);
+                  if (!positions || positions.length < 3) return null;
                   const isTarget = inspParcelId && p.id === inspParcelId;
                   return (
                     <Polygon
                       key={`village-parcel-${p.id || p.ulpin}`}
-                      positions={p.coordinates}
+                      positions={positions}
+                      eventHandlers={{
+                        click: () => handleSelectExistingParcel(p.id)
+                      }}
                       pathOptions={{
                         color: isTarget ? '#f59e0b' : '#38bdf8',
                         fillColor: isTarget ? '#f59e0b' : '#0284c7',
-                        fillOpacity: isTarget ? 0.45 : 0.12,
-                        weight: isTarget ? 2.5 : 1,
+                        fillOpacity: isTarget ? 0.45 : 0.15,
+                        weight: isTarget ? 2.5 : 1.5,
                         dashArray: isTarget ? '4,4' : undefined
                       }}
                     >
@@ -1132,6 +1202,13 @@ export const FieldSurveyMobile = () => {
                           <div className="text-slate-700 font-medium">Plot #{p.survey_number} • Khata: {p.khata_number}</div>
                           <div className="text-slate-600">Owner: {p.owner_name}</div>
                           <div className="text-slate-600">Area: {p.area_ha} Ha</div>
+                          <button
+                            type="button"
+                            onClick={() => handleSelectExistingParcel(p.id)}
+                            className="mt-1.5 px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-[10px] font-bold block w-full text-center transition"
+                          >
+                            Inspect This Parcel
+                          </button>
                         </div>
                       </Popup>
                     </Polygon>
@@ -1484,7 +1561,14 @@ export const FieldSurveyMobile = () => {
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div>
                   <label className="text-slate-400 mb-1 block">{t('Affected Families')}</label>
-                  <input type="number" value={inspFamilies} onChange={e => setInspFamilies(parseInt(e.target.value) || 0)} className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white" />
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    value={inspFamilies}
+                    onChange={e => setInspFamilies(e.target.value === '' ? '' : parseInt(e.target.value) || 0)}
+                    className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
@@ -1497,19 +1581,42 @@ export const FieldSurveyMobile = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="text-slate-400 mb-1 block">{t('Size')}</label>
-                    <input type="number" value={inspFamilyMembers} onChange={e => setInspFamilyMembers(parseInt(e.target.value) || 0)} className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white" />
+                    <label className="text-slate-400 mb-1 block" title={t('Total Persons in Affected Family')}>
+                      {t('Family Members')}
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={inspFamilyMembers}
+                      onChange={e => setInspFamilyMembers(e.target.value === '' ? '' : parseInt(e.target.value) || 0)}
+                      className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"
+                    />
                   </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div>
                   <label className="text-slate-400 mb-1 block">{t('Structures (Houses)')}</label>
-                  <input type="number" value={inspStructures} onChange={e => setInspStructures(parseInt(e.target.value) || 0)} className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white" />
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    value={inspStructures}
+                    onChange={e => setInspStructures(e.target.value === '' ? '' : parseInt(e.target.value) || 0)}
+                    className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"
+                  />
                 </div>
                 <div>
                   <label className="text-slate-400 mb-1 block">{t('Trees (Valuable)')}</label>
-                  <input type="number" value={inspTrees} onChange={e => setInspTrees(parseInt(e.target.value) || 0)} className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white" />
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    value={inspTrees}
+                    onChange={e => setInspTrees(e.target.value === '' ? '' : parseInt(e.target.value) || 0)}
+                    className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white"
+                  />
                 </div>
               </div>
               <div className="flex gap-4 mb-4 text-xs">
