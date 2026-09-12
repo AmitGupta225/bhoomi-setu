@@ -45,7 +45,6 @@ import {
   RefreshCw,
   Clock,
   Database,
-  Footprints,
   Undo2
 } from 'lucide-react';
 
@@ -69,11 +68,11 @@ const redMarkerIcon = new L.Icon({
 
 
 
-// Interactive Map Click Handler Helper for tapping boundary vertices
-function MapEventsListener({ onMapClick, active }) {
+// Interactive Map Click Handler Helper (moves pin to tapped map coordinate)
+function MapEventsListener({ onMapClick }) {
   useMapEvents({
     click(e) {
-      if (active && onMapClick) {
+      if (onMapClick) {
         onMapClick(e.latlng);
       }
     }
@@ -190,8 +189,7 @@ export const FieldSurveyMobile = () => {
   const [selectedConflictItem, setSelectedConflictItem] = useState(null);
   const [isResolvingConflict, setIsResolvingConflict] = useState(false);
 
-  // Map Tile & Vertex Editing State
-  const [tapToAddVertex, setTapToAddVertex] = useState(true);
+  // Project Area Map Tile State
   const [showTileDownloadModal, setShowTileDownloadModal] = useState(false);
   const [tileDownloadProgress, setTileDownloadProgress] = useState(null);
   const [cachedTileCount, setCachedTileCount] = useState(0);
@@ -461,12 +459,12 @@ export const FieldSurveyMobile = () => {
         completed: 0,
         total: 100,
         bytes: 0,
-        message: t(`Caching ${parcels.length} village cadastral parcel boundaries to IndexedDB...`)
+        message: t(`Caching ${parcels.length} project cadastral parcel boundaries...`)
       });
       const res = await cacheVillageProject(activeProj, parcels);
 
-      // Step 2: Calculate geographic bounding box
-      const bounds = calculateVillageBounds(activeProj, parcels);
+      // Step 2: Calculate geographic bounding box (entire 3 km project area radius)
+      const bounds = calculateVillageBounds(activeProj, parcels, 3.0);
 
       // Step 3: Download map tiles (OSM & Satellite) for zooms 14, 15, 16
       setTileDownloadProgress({
@@ -475,7 +473,7 @@ export const FieldSurveyMobile = () => {
         completed: 0,
         total: 80,
         bytes: 0,
-        message: t('Calculating spatial tile matrix for village cadastre...')
+        message: t('Downloading project area map tiles (Street & Satellite)...')
       });
 
       const tileResult = await downloadVillageMapTiles(bounds, {
@@ -502,17 +500,17 @@ export const FieldSurveyMobile = () => {
         completed: tileResult.cached,
         total: tileResult.total,
         bytes: tileResult.bytes,
-        message: `✓ ${t('Successfully cached')} ${res.count} ${t('parcels and')} ${tileResult.cached} ${t('offline map tiles!')}`
+        message: `✓ ${t('Project area downloaded! You can now use the map and survey completely offline.')}`
       });
 
-      setCacheMessage(`✓ ${t('Village & Offline Map Pack Cached!')} (${tileResult.cached} ${t('tiles')})`);
+      setCacheMessage(`✓ ${t('Project Area Map Downloaded for Offline Surveying')} (${tileResult.cached} ${t('tiles')})`);
       setTimeout(() => setCacheMessage(''), 8000);
     } catch (err) {
-      console.error('Failed to cache village:', err);
+      console.error('Failed to download project map:', err);
       setTileDownloadProgress({
         phase: 'ERROR',
         percent: 100,
-        message: t('Caching error: ') + err.message
+        message: t('Download error: ') + err.message
       });
     } finally {
       setIsCaching(false);
@@ -564,12 +562,9 @@ export const FieldSurveyMobile = () => {
   const handleMapClick = (latlng) => {
     const newLat = parseFloat(latlng.lat.toFixed(6));
     const newLng = parseFloat(latlng.lng.toFixed(6));
-    setVertices(prev => [...prev, { lat: newLat, lng: newLng }]);
-    setUserLocation({ lat: newLat, lng: newLng, accuracy: 3, isFallback: false });
+    setUserLocation({ lat: newLat, lng: newLng, accuracy: null, isFallback: false });
     setCustomLat(newLat.toFixed(6));
     setCustomLng(newLng.toFixed(6));
-    setSubmitSuccess(`🎯 ${t('Placed Corner V')}${vertices.length + 1} (${newLat}, ${newLng})`);
-    setTimeout(() => setSubmitSuccess(''), 3000);
   };
 
   const handleVertexDrag = (index, e) => {
@@ -583,40 +578,6 @@ export const FieldSurveyMobile = () => {
     });
     setCustomLat(newLat.toFixed(6));
     setCustomLng(newLng.toFixed(6));
-  };
-
-  const handleSimulateRoverWalk = () => {
-    let baseLat = vertices.length > 0 ? vertices[vertices.length - 1].lat : (parseFloat(customLat) || 19.7280);
-    let baseLng = vertices.length > 0 ? vertices[vertices.length - 1].lng : (parseFloat(customLng) || 72.8450);
-
-    const stepIndex = vertices.length % 5;
-    let nextLat, nextLng;
-    if (stepIndex === 0) {
-      nextLat = baseLat + 0.00030;
-      nextLng = baseLng + 0.00025;
-    } else if (stepIndex === 1) {
-      nextLat = baseLat - 0.00010;
-      nextLng = baseLng + 0.00035;
-    } else if (stepIndex === 2) {
-      nextLat = baseLat - 0.00035;
-      nextLng = baseLng - 0.00015;
-    } else if (stepIndex === 3) {
-      nextLat = baseLat - 0.00015;
-      nextLng = baseLng - 0.00035;
-    } else {
-      nextLat = baseLat + 0.00030;
-      nextLng = baseLng - 0.00010;
-    }
-
-    nextLat = parseFloat(nextLat.toFixed(6));
-    nextLng = parseFloat(nextLng.toFixed(6));
-
-    setVertices(prev => [...prev, { lat: nextLat, lng: nextLng }]);
-    setUserLocation({ lat: nextLat, lng: nextLng, accuracy: 2, isFallback: false });
-    setCustomLat(nextLat.toFixed(6));
-    setCustomLng(nextLng.toFixed(6));
-    setSubmitSuccess(`🚶 ${t('Rover Walk: Captured Corner V')}${vertices.length + 1} (${nextLat}, ${nextLng})`);
-    setTimeout(() => setSubmitSuccess(''), 3000);
   };
 
   const handleUndoVertex = () => {
@@ -635,7 +596,7 @@ export const FieldSurveyMobile = () => {
       const vLat = parseFloat(userLocation.lat.toFixed(6));
       const vLng = parseFloat(userLocation.lng.toFixed(6));
       setVertices(prev => [...prev, { lat: vLat, lng: vLng }]);
-      setSubmitSuccess(`Added Vertex V${vertices.length + 1} at GPS point (${vLat}, ${vLng})`);
+      setSubmitSuccess(`Added Vertex V${vertices.length + 1} (${vLat}, ${vLng})`);
       setTimeout(() => setSubmitSuccess(''), 3000);
       return;
     }
@@ -647,7 +608,7 @@ export const FieldSurveyMobile = () => {
           const vLng = parseFloat(pos.coords.longitude.toFixed(6));
           setVertices(prev => [...prev, { lat: vLat, lng: vLng }]);
           setUserLocation({ lat: vLat, lng: vLng, accuracy: Math.round(pos.coords.accuracy || 10), isFallback: false });
-          setSubmitSuccess(`Added Vertex V${vertices.length + 1} at GPS point (${vLat}, ${vLng})`);
+          setSubmitSuccess(`Added Vertex V${vertices.length + 1} (${vLat}, ${vLng})`);
           setTimeout(() => setSubmitSuccess(''), 3000);
         },
         () => {
@@ -655,8 +616,8 @@ export const FieldSurveyMobile = () => {
           const cLng = parseFloat(customLng) || 72.8450;
           setVertices(prev => [...prev, { lat: cLat, lng: cLng }]);
           setUserLocation({ lat: cLat, lng: cLng, accuracy: 15, isFallback: true });
-          setSubmitSuccess(`Rover Point V${vertices.length + 1} added at (${cLat}, ${cLng})`);
-          setTimeout(() => setSubmitSuccess(''), 4000);
+          setSubmitSuccess(`Added Vertex V${vertices.length + 1} (${cLat}, ${cLng})`);
+          setTimeout(() => setSubmitSuccess(''), 3000);
         },
         { enableHighAccuracy: true, timeout: 5000, maximumAge: 300000 }
       );
@@ -664,6 +625,8 @@ export const FieldSurveyMobile = () => {
       const cLat = parseFloat(customLat) || 19.7280;
       const cLng = parseFloat(customLng) || 72.8450;
       setVertices(prev => [...prev, { lat: cLat, lng: cLng }]);
+      setSubmitSuccess(`Added Vertex V${vertices.length + 1} (${cLat}, ${cLng})`);
+      setTimeout(() => setSubmitSuccess(''), 3000);
     }
   };
 
@@ -671,10 +634,12 @@ export const FieldSurveyMobile = () => {
     const vLat = parseFloat(customLat);
     const vLng = parseFloat(customLng);
     if (isNaN(vLat) || isNaN(vLng)) {
-      alert('Please enter valid numerical Latitude and Longitude values.');
+      alert(t('Please enter valid numerical Latitude and Longitude values.'));
       return;
     }
     setVertices(prev => [...prev, { lat: vLat, lng: vLng }]);
+    setSubmitSuccess(`Added Vertex V${vertices.length + 1} (${vLat}, ${vLng})`);
+    setTimeout(() => setSubmitSuccess(''), 3000);
   };
 
   const handleRemoveVertex = (index) => {
@@ -860,7 +825,7 @@ export const FieldSurveyMobile = () => {
         status: 'Verified'
       };
       setParcels(prev => [localParcel, ...prev]);
-      setSubmitSuccess(`${t('Offline Mode: New Parcel')} (${provisionalUlpin}) ${t('saved to outbox & rendered on map!')}`);
+      setSubmitSuccess(t('✓ Parcel & Inspection saved locally! Will sync automatically when back online.'));
       setTimeout(() => setSubmitSuccess(''), 7000);
       await refreshOutbox();
       return;
@@ -899,7 +864,7 @@ export const FieldSurveyMobile = () => {
         status: 'Verified'
       };
       setParcels(prev => [localParcel, ...prev]);
-      setSubmitSuccess(`${t('Network error. New Parcel')} (${provisionalUlpin}) ${t('saved to offline outbox!')}`);
+      setSubmitSuccess(t('✓ Saved to offline storage! Will sync automatically when connection returns.'));
       setTimeout(() => setSubmitSuccess(''), 7000);
       await refreshOutbox();
     }
@@ -968,21 +933,21 @@ export const FieldSurveyMobile = () => {
             </div>
           )}
 
-          {/* Cache Village & Map Tiles Button */}
+          {/* Download Project Area Map Button */}
           <button
             type="button"
             disabled={isCaching}
-            onClick={handleDownloadVillageOffline}
-            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-teal-900/60 to-slate-800 hover:from-teal-800/80 hover:to-slate-700 text-teal-200 border border-teal-500/40 text-xs font-semibold flex items-center gap-2 transition shadow-sm"
-            title={t('Download all village cadastral parcels and raster map tiles for offline fieldwork')}
+            onClick={() => setShowTileDownloadModal(true)}
+            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-teal-900/70 to-slate-800 hover:from-teal-800/90 hover:to-slate-700 text-teal-200 border border-teal-500/40 text-xs font-bold flex items-center gap-2 transition shadow-sm"
+            title={t('Download the entire project area map and parcels for offline fieldwork')}
           >
             <Download size={14} className={isCaching ? 'animate-bounce text-emerald-400' : 'text-teal-400'} />
-            <span>{isCaching ? t('Caching Dossier & Map...') : t('📥 Cache Village & Offline Map Data')}</span>
+            <span>{isCaching ? t('Downloading Map...') : t('📥 Download Project Area Map')}</span>
           </button>
           {cachedTileCount > 0 && (
             <span className="px-2.5 py-1 rounded-xl bg-slate-800/90 text-cyan-300 text-[11px] font-mono border border-slate-700 flex items-center gap-1.5 shadow-sm">
               <Globe size={12} className="text-cyan-400" />
-              <span>{cachedTileCount} {t('Offline Map Tiles Cached')}</span>
+              <span>{cachedTileCount} {t('Offline Tiles Cached')}</span>
             </span>
           )}
           {cacheMessage && (
@@ -1099,56 +1064,6 @@ export const FieldSurveyMobile = () => {
             </div>
 
             <div className="h-[60vh] min-h-[400px] w-full rounded-2xl overflow-hidden border border-slate-800 relative z-0 bg-slate-950">
-              {/* Interactive Cadastral Rover Bar (Top-Left) */}
-              <div className="absolute top-4 left-4 z-[500] flex flex-wrap items-center gap-1.5 max-w-[65%]">
-                <button
-                  type="button"
-                  onClick={() => setTapToAddVertex(!tapToAddVertex)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xl backdrop-blur-md border ${
-                    tapToAddVertex
-                      ? 'bg-cyan-500 text-slate-950 border-cyan-400 font-extrabold ring-2 ring-cyan-400/40 shadow-cyan-500/20'
-                      : 'bg-slate-900/90 text-slate-300 border-slate-700 hover:text-white'
-                  }`}
-                  title="Tap anywhere on the map to add boundary corner vertices"
-                >
-                  <Crosshair className="w-3.5 h-3.5" />
-                  <span>{tapToAddVertex ? t('🎯 Tap Map: Add Corner') : t('🎯 Tap to Add (OFF)')}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleSimulateRoverWalk}
-                  className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/90 text-emerald-300 hover:text-emerald-200 border border-emerald-500/40 shadow-2xl backdrop-blur-md flex items-center gap-1 transition"
-                  title="Simulate walking 25m along perimeter with GPS rover"
-                >
-                  <Footprints className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>{t('🚶 Walk Corner')}</span>
-                </button>
-
-                {vertices.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleUndoVertex}
-                    className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/90 text-slate-300 hover:text-white border border-slate-700 shadow-2xl backdrop-blur-md flex items-center gap-1 transition"
-                    title="Undo last added vertex"
-                  >
-                    <Undo2 className="w-3.5 h-3.5" />
-                    <span>{t('Undo')}</span>
-                  </button>
-                )}
-
-                {vertices.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleClearAllVertices}
-                    className="px-2 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/90 text-rose-400 hover:text-rose-300 border border-rose-500/30 shadow-2xl backdrop-blur-md transition"
-                    title="Clear all vertices"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-
               {/* PROMINENT HIGH-CONTRAST MAP VIEW SWITCHER (STANDARD MAP vs SATELLITE VIEW) */}
               <div className="absolute top-4 right-4 z-[500] bg-slate-900/95 border border-slate-700/80 rounded-2xl p-1.5 shadow-2xl flex items-center gap-1.5 backdrop-blur-md">
                 <button
@@ -1191,10 +1106,7 @@ export const FieldSurveyMobile = () => {
                 className="w-full h-full"
                 style={{ backgroundColor: '#0a1628' }}
               >
-                <MapEventsListener 
-                  active={tapToAddVertex} 
-                  onMapClick={handleMapClick} 
-                />
+                <MapEventsListener onMapClick={handleMapClick} />
 
                 <FlyToSearch target={searchTarget} />
                 
@@ -1342,24 +1254,38 @@ export const FieldSurveyMobile = () => {
                   <span>{t('Boundary Vertices')} ({vertices.length} {t('Points')})</span>
                 </span>
 
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={handleSimulateRoverWalk}
-                    className="px-2.5 py-1 bg-emerald-950 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 rounded-lg text-[11px] font-semibold transition flex items-center gap-1"
-                    title="Simulate walking next corner with satellite GPS rover"
-                  >
-                    <Footprints className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>{t('Walk Corner')}</span>
-                  </button>
+                <div className="flex items-center gap-2">
+                  {vertices.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleUndoVertex}
+                      className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition flex items-center gap-1"
+                      title={t('Undo last vertex')}
+                    >
+                      <Undo2 className="w-3.5 h-3.5" />
+                      <span>{t('Undo')}</span>
+                    </button>
+                  )}
+
+                  {vertices.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleClearAllVertices}
+                      className="px-2.5 py-1 bg-rose-950/70 hover:bg-rose-900 border border-rose-500/30 text-rose-300 rounded-lg text-xs font-medium transition flex items-center gap-1"
+                      title={t('Clear all vertices')}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>{t('Clear')}</span>
+                    </button>
+                  )}
 
                   <button
                     type="button"
                     onClick={handleAddCurrentGpsAsVertex}
-                    className="px-2.5 py-1 bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/40 text-cyan-300 rounded-lg text-[11px] font-medium transition flex items-center gap-1"
-                    title="Add your physical device location or current dropped pin"
+                    className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-slate-950 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow"
+                    title={t('Record current GPS location to boundary')}
                   >
-                    <Plus className="w-3.5 h-3.5" />
+                    <Plus className="w-4 h-4" />
                     <span>{t('Record GPS Point')}</span>
                   </button>
                 </div>
@@ -1367,31 +1293,33 @@ export const FieldSurveyMobile = () => {
 
               {/* Custom Point Input */}
               <div className="grid grid-cols-12 gap-2 items-center pt-2 border-t border-slate-800">
-                <div className="col-span-5 font-mono">
-                  <span className="text-slate-500 text-[10px] block">{t('Custom Lat:')}</span>
+                <div className="col-span-6 font-mono">
+                  <span className="text-slate-500 text-[10px] block">{t('Selected Pin Lat:')}</span>
                   <input
                     type="text"
                     value={customLat}
-                    onChange={(e) =>setCustomLat(e.target.value)}
+                    onChange={(e) => setCustomLat(e.target.value)}
                     className="w-full p-1.5 bg-slate-800 border border-slate-700 rounded text-emerald-400 text-xs focus:outline-none"
-                  /></div>
-                <div className="col-span-5 font-mono">
-                  <span className="text-slate-500 text-[10px] block">{t('Custom Lng:')}</span>
+                  />
+                </div>
+                <div className="col-span-6 font-mono">
+                  <span className="text-slate-500 text-[10px] block">{t('Selected Pin Lng:')}</span>
                   <input
                     type="text"
                     value={customLng}
-                    onChange={(e) =>setCustomLng(e.target.value)}
+                    onChange={(e) => setCustomLng(e.target.value)}
                     className="w-full p-1.5 bg-slate-800 border border-slate-700 rounded text-emerald-400 text-xs focus:outline-none"
-                  /></div>
+                  />
+                </div>
                 <div className="col-span-12 pt-1">
                   <button
                     type="button"
                     onClick={handleAddCustomVertex}
-                    className="w-full py-1.5 bg-emerald-700 hover:bg-emerald-600 border border-emerald-500 text-white rounded text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-900/50"
-                    title="Add Red Pin Location to Polygon"
+                    className="w-full py-2 bg-emerald-700 hover:bg-emerald-600 border border-emerald-500 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-900/40"
+                    title={t('Add selected pin location to boundary')}
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>{t('Add Red Pin to Boundary')}</span>
+                    <span>{t('Add Selected Pin to Boundary')}</span>
                   </button>
                 </div>
               </div>
@@ -1634,6 +1562,7 @@ export const FieldSurveyMobile = () => {
       </div>
  
       {/* Offline Village Dossier & Map Tiles Download Progress Modal */}
+      {/* Download Entire Project Area Map Modal */}
       {showTileDownloadModal && (
         <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in">
           <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-5 animate-in zoom-in-95">
@@ -1643,8 +1572,8 @@ export const FieldSurveyMobile = () => {
                   <Download className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white font-heading">{t('Offline Cadastre & Map Downloader')}</h3>
-                  <p className="text-xs text-slate-400">{t('Pre-cache village boundaries & spatial raster tiles')}</p>
+                  <h3 className="text-base font-bold text-white font-heading">{t('Download Project Area Map')}</h3>
+                  <p className="text-xs text-slate-400">{t('Save entire project radius & parcels to use the map offline')}</p>
                 </div>
               </div>
               <button
@@ -1663,12 +1592,16 @@ export const FieldSurveyMobile = () => {
                   <span className="font-semibold text-white">{projects.find(p => p.id === newProjId)?.name || t('Active Corridor Project')}</span>
                 </div>
                 <div className="flex justify-between text-slate-300">
-                  <span className="text-slate-400">{t('Cadastral Parcels:')}</span>
-                  <span className="font-mono text-cyan-400 font-bold">{parcels.length} {t('Plots')}</span>
+                  <span className="text-slate-400">{t('Village / Settlement:')}</span>
+                  <span className="font-semibold text-cyan-400">{newVillage || t('Project Corridor Zone')}</span>
                 </div>
                 <div className="flex justify-between text-slate-300">
-                  <span className="text-slate-400">{t('Spatial Zoom Coverage:')}</span>
-                  <span className="font-mono text-emerald-400 font-semibold">{t('Zoom 14, 15, 16 (Cadastral High-Res)')}</span>
+                  <span className="text-slate-400">{t('Offline Map Coverage:')}</span>
+                  <span className="font-semibold text-emerald-400">{t('Full ~3 km Project Radius (Street & Satellite)')}</span>
+                </div>
+                <div className="flex justify-between text-slate-300">
+                  <span className="text-slate-400">{t('Cadastral Parcels:')}</span>
+                  <span className="font-mono text-cyan-400 font-bold">{parcels.length} {t('Plots')}</span>
                 </div>
               </div>
 
@@ -1704,7 +1637,7 @@ export const FieldSurveyMobile = () => {
               <div className="p-3 bg-cyan-950/30 border border-cyan-500/20 rounded-xl text-xs text-cyan-300 flex items-start gap-2.5">
                 <Globe className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
                 <span>
-                  {t('Once downloaded, the entire village map and satellite tiles are stored on this device. You can survey with zero cellular signal or in airplane mode.')}
+                  {t('Once downloaded, everything works just like online with zero internet. Any surveys and parcels you create are stored on your device and will sync automatically when you reconnect.')}
                 </span>
               </div>
             </div>
@@ -1717,7 +1650,7 @@ export const FieldSurveyMobile = () => {
                   className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs rounded-xl transition shadow-lg flex items-center justify-center gap-2"
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>{t('✓ Start Offline Fieldwork')}</span>
+                  <span>{t('✓ Ready to Survey (Close)')}</span>
                 </button>
               ) : isCaching ? (
                 <button
@@ -1735,7 +1668,7 @@ export const FieldSurveyMobile = () => {
                   className="w-full py-3 bg-gradient-to-r from-cyan-500 to-emerald-500 text-slate-950 font-bold text-xs rounded-xl hover:brightness-110 transition shadow-lg flex items-center justify-center gap-2"
                 >
                   <Download className="w-4 h-4" />
-                  <span>{t('Download Offline Dossier & Map Pack')}</span>
+                  <span>{t('📥 Download Entire Project Area Map')}</span>
                 </button>
               )}
             </div>

@@ -24,17 +24,22 @@ export function latLngToTile(lat, lng, zoom) {
  * Calculates geographic bounding box for a project village and its parcels
  * Includes a safety padding margin (~1.5 km) around the survey zone
  */
-export function calculateVillageBounds(project, parcels = []) {
+export function calculateVillageBounds(project, parcels = [], radiusKm = 2.5) {
   // Center point: project center or first parcel or default Palghar
   const cLat = parseFloat(project?.center_lat) || (parcels?.[0]?.lat ? parseFloat(parcels[0].lat) : 19.7280);
   const cLng = parseFloat(project?.center_lng) || (parcels?.[0]?.lng ? parseFloat(parcels[0].lng) : 72.8450);
 
-  let minLat = cLat - 0.012;
-  let maxLat = cLat + 0.012;
-  let minLng = cLng - 0.012;
-  let maxLng = cLng + 0.012;
+  // Approximate degree delta for designated radius in km (~111 km per latitude degree)
+  const deltaLat = Math.max(0.015, radiusKm / 111);
+  const cosLat = Math.cos((cLat * Math.PI) / 180) || 1;
+  const deltaLng = Math.max(0.015, radiusKm / (111 * cosLat));
 
-  // Filter parcels STRICTLY for this project/village
+  let minLat = cLat - deltaLat;
+  let maxLat = cLat + deltaLat;
+  let minLng = cLng - deltaLng;
+  let maxLng = cLng + deltaLng;
+
+  // Filter parcels STRICTLY for this project/village and expand bounds to enclose them
   const projectParcels = (parcels || []).filter(p => 
     !project?.id || p.project_id === project.id
   );
@@ -52,12 +57,12 @@ export function calculateVillageBounds(project, parcels = []) {
       }
     });
 
-    // Only expand if valid and within a sensible village extent (< 0.06 deg, ~6km)
-    if (pMinLat < 90 && (pMaxLat - pMinLat < 0.06) && (pMaxLng - pMinLng < 0.06)) {
-      minLat = pMinLat - 0.006;
-      maxLat = pMaxLat + 0.006;
-      minLng = pMinLng - 0.006;
-      maxLng = pMaxLng + 0.006;
+    // Enclose all project parcels plus a safety buffer (~800m)
+    if (pMinLat < 90 && (pMaxLat - pMinLat < 0.08) && (pMaxLng - pMinLng < 0.08)) {
+      minLat = Math.min(minLat, pMinLat - 0.008);
+      maxLat = Math.max(maxLat, pMaxLat + 0.008);
+      minLng = Math.min(minLng, pMinLng - 0.008);
+      maxLng = Math.max(maxLng, pMaxLng + 0.008);
     }
   }
 
