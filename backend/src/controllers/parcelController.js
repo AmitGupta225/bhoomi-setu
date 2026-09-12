@@ -160,3 +160,132 @@ export const handler_9 = async (req, res) => {
     console.error("500 ERROR:", err); res.status(500).json({ success: false, error: err.message });
   }
 };
+
+export const handler_update_parcel = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      survey_number, khata_number, village, tehsil, district, state,
+      area_ha, land_type, owner_name, owner_contact, address, vertices, lat, lng,
+      role, user_name
+    } = req.body;
+
+    const existing = await queryOne(`SELECT * FROM parcels WHERE id = ?`, [id]);
+    if (!existing) return res.status(404).json({ success: false, error: 'Parcel not found' });
+
+    let geojson = existing.geojson;
+    if (vertices && Array.isArray(vertices) && vertices.length >= 3) {
+      let formattedVertices = vertices.map(v => [v.lng, v.lat]);
+      if (formattedVertices[0][0] !== formattedVertices[formattedVertices.length - 1][0] ||
+          formattedVertices[0][1] !== formattedVertices[formattedVertices.length - 1][1]) {
+        formattedVertices.push([formattedVertices[0][0], formattedVertices[0][1]]);
+      }
+      geojson = JSON.stringify({
+        type: 'Feature',
+        properties: {
+          survey: survey_number || existing.survey_number,
+          owner: owner_name || existing.owner_name,
+          area: `${area_ha || existing.area_ha} Ha (${land_type || existing.land_type})`
+        },
+        geometry: {
+          type: 'Polygon',
+          coordinates: [formattedVertices]
+        }
+      });
+    }
+
+    const updatedAreaHa = area_ha !== undefined && area_ha !== null && area_ha !== '' ? parseFloat(area_ha) : existing.area_ha;
+    const finalLat = lat !== undefined ? lat : (vertices && vertices[0] ? vertices[0].lat : existing.lat);
+    const finalLng = lng !== undefined ? lng : (vertices && vertices[0] ? vertices[0].lng : existing.lng);
+
+    await run(
+      `UPDATE parcels SET 
+        survey_number = COALESCE(?, survey_number),
+        khata_number = COALESCE(?, khata_number),
+        village = COALESCE(?, village),
+        tehsil = COALESCE(?, tehsil),
+        district = COALESCE(?, district),
+        state = COALESCE(?, state),
+        area_ha = ?,
+        land_type = COALESCE(?, land_type),
+        owner_name = COALESCE(?, owner_name),
+        owner_contact = COALESCE(?, owner_contact),
+        geojson = ?,
+        lat = ?,
+        lng = ?
+      WHERE id = ?`,
+      [
+        survey_number, khata_number, village, tehsil, district, state,
+        updatedAreaHa, land_type, owner_name, owner_contact,
+        geojson, finalLat, finalLng, id
+      ]
+    );
+
+    // Recalculate compensation if area changed
+    if (updatedAreaHa !== existing.area_ha) {
+      const market_rate_sqm = existing.market_rate_sqm || 2500;
+      const statutory_multiplier = existing.statutory_multiplier || 2.0;
+      const baseValue = updatedAreaHa * 10000 * market_rate_sqm;
+      const multipliedValue = baseValue * statutory_multiplier;
+      const structureAssets = baseValue * 0.15;
+      const solatium = multipliedValue + structureAssets;
+      const interest = (multipliedValue + solatium) * 0.12;
+      const totalAssessed = multipliedValue + structureAssets + solatium + interest;
+
+      await run(
+        `UPDATE compensation SET 
+          land_value_rs = ?, structure_assets_rs = ?, solatium_100_percent_rs = ?,
+          interest_amount_rs = ?, total_assessed_rs = ?
+        WHERE parcel_id = ?`,
+        [multipliedValue, structureAssets, solatium, interest, totalAssessed, id]
+      );
+    }
+
+    await run(
+      `INSERT INTO audit_logs (user_role, user_name, action, details) VALUES (?, ?, ?, ?)`,
+      [role || 'Field Surveyor', user_name || 'Cadastral Surveyor', 'Edited Land Parcel Boundary & Details', `Updated plot ${id} (${existing.ulpin})`]
+    );
+
+    const updatedRow = await queryOne(`SELECT * FROM parcels WHERE id = ?`, [id]);
+    res.json({
+      success: true,
+      message: `Parcel ${existing.ulpin} updated successfully`,
+      data: { ...updatedRow, geojson: JSON.parse(updatedRow.geojson) }
+    });
+  } catch (err) {
+    console.error("500 ERROR in handler_update_parcel:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+export const handler_delete_parcel = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role, user_name } = req.body || {};
+
+    const existing = await queryOne(`SELECT * FROM parcels WHERE id = ?`, [id]);
+    if (!existing) {
+      return res.status(404).json({ success: false, error: 'Parcel not found' });
+    }
+
+    // Clean up dependent records in compensation, surveys, and rr
+    await run(`DELETE FROM compensation WHERE parcel_id = ?`, [id]);
+    await run(`DELETE FROM rr_records WHERE parcel_id = ?`, [id]);
+    await run(`DELETE FROM field_surveys WHERE parcel_id = ?`, [id]);
+    await run(`DELETE FROM parcels WHERE id = ?`, [id]);
+
+    await run(
+      `INSERT INTO audit_logs (user_role, user_name, action, details) VALUES (?, ?, ?, ?)`,
+      [role || 'Field Surveyor', user_name || 'Cadastral Surveyor', 'Deleted Land Parcel', `Permanently deleted parcel ${id} (${existing.ulpin}, Survey: ${existing.survey_number})`]
+    );
+
+    res.json({
+      success: true,
+      message: `Parcel ${existing.ulpin} (${existing.survey_number}) deleted successfully`,
+      deletedId: id
+    });
+  } catch (err) {
+    console.error("500 ERROR in handler_delete_parcel:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+};

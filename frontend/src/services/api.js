@@ -104,6 +104,16 @@ export const createParcel = async (parcelData) => {
   return res.data;
 };
 
+export const updateParcel = async (id, parcelData) => {
+  const res = await axios.put(`${API_BASE}/parcels/${id}`, parcelData);
+  return res.data;
+};
+
+export const deleteParcel = async (id, role, userName) => {
+  const res = await axios.delete(`${API_BASE}/parcels/${id}`, { data: { role, user_name: userName } });
+  return res.data;
+};
+
 export const fetchCompensationRecords = async (projectId) => {
   try {
     const res = await axios.get(`${API_BASE}/compensation`, { params: { project_id: projectId } });

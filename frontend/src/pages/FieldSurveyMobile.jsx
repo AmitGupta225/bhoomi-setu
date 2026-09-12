@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchParcels, fetchProjects, createParcel, submitFieldSurvey, approveSurvey, fetchUlpinData } from '../services/api';
+import { fetchParcels, fetchProjects, createParcel, updateParcel, deleteParcel, submitFieldSurvey, approveSurvey, fetchUlpinData } from '../services/api';
 import { 
   cacheVillageProject, 
   getCachedParcels, 
@@ -924,6 +924,65 @@ export const FieldSurveyMobile = () => {
     }
   };
 
+  const handleUpdateParcel = async (e) => {
+    if (e) e.preventDefault();
+    if (!inspParcelId) return;
+    if (vertices.length < 3) {
+      alert(t('A valid land boundary polygon must have at least 3 corner vertices.'));
+      return;
+    }
+    const calculatedAreaHaRaw = parseFloat(calculatePolygonAreaHa(vertices));
+    const finalAreaHa = manualAreaHa !== null && manualAreaHa !== '' ? parseFloat(manualAreaHa) : calculatedAreaHaRaw;
+
+    try {
+      const res = await updateParcel(inspParcelId, {
+        survey_number: newSurveyNo,
+        khata_number: newKhataNo,
+        village: newVillage,
+        land_type: newLandType,
+        owner_name: newOwnerName,
+        owner_contact: newOwnerContact,
+        area_ha: finalAreaHa > 0 ? finalAreaHa : undefined,
+        vertices: vertices,
+        lat: vertices[0]?.lat,
+        lng: vertices[0]?.lng,
+        role: activeRole?.label || 'Field Surveyor',
+        user_name: activeRole?.label || 'Cadastral Surveyor'
+      });
+
+      if (res && res.success) {
+        setSubmitSuccess(t(`✓ Parcel ${res.data?.ulpin || ''} updated successfully!`));
+        const pList = await fetchParcels(selectedProjectId ? { project_id: selectedProjectId } : {});
+        setParcels(pList || []);
+        setTimeout(() => setSubmitSuccess(''), 5000);
+      }
+    } catch (err) {
+      alert(t('Failed to update parcel: ') + err.message);
+    }
+  };
+
+  const handleDeleteParcel = async () => {
+    if (!inspParcelId) return;
+    const p = parcels.find(x => x.id === inspParcelId);
+    const ulpin = p?.ulpin || inspParcelId;
+    const survey = p?.survey_number || '';
+
+    const confirmMsg = t(`Are you sure you want to PERMANENTLY DELETE Parcel ${ulpin} (Survey: ${survey})?\n\nThis will remove the plot boundaries, compensation ledger, and field inspections associated with this parcel.`);
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      const res = await deleteParcel(inspParcelId, activeRole?.label, activeRole?.label);
+      if (res && res.success) {
+        setSubmitSuccess(t(`✓ Parcel ${ulpin} deleted successfully!`));
+        setParcels(prev => prev.filter(x => x.id !== inspParcelId));
+        handleSelectExistingParcel(''); // Reset form to create new mode
+        setTimeout(() => setSubmitSuccess(''), 5000);
+      }
+    } catch (err) {
+      alert(t('Failed to delete parcel: ') + err.message);
+    }
+  };
+
   const calculatedHa = calculatePolygonAreaHa(vertices);
   const displayAreaHa = manualAreaHa !== null ? manualAreaHa : (vertices.length >= 3 ? calculatedHa : '');
   const displayAreaParsed = displayAreaHa === '' ? 0 : parseFloat(displayAreaHa);
@@ -1433,15 +1492,38 @@ export const FieldSurveyMobile = () => {
       <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4">
         {/* Form & Vertex Controls */}
         <div className="space-y-4">
-          <h2 className="text-base font-bold text-white font-heading flex items-center gap-2">
-            <Layers className="w-4 h-4 text-cyan-400" />
-            <span>{t('Map Custom Multi-Vertex Land Boundary')}</span>
+          <h2 className="text-base font-bold text-white font-heading flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Layers className="w-4 h-4 text-cyan-400" />
+              <span>
+                {inspParcelId 
+                  ? t('Edit Selected Land Parcel & Boundaries') 
+                  : t('Map Custom Multi-Vertex Land Boundary')}
+              </span>
+            </div>
+            {inspParcelId && (
+              <span className="px-2.5 py-0.5 bg-amber-950 border border-amber-500/40 text-amber-300 text-[11px] rounded-full font-bold">
+                {t('Editing Mode')}
+              </span>
+            )}
           </h2>
 
           <form onSubmit={handleCreateMultiVertexParcel} className="space-y-4 text-xs">
             <div className="space-y-4 w-full">
             <div className="mb-4 bg-slate-800/50 border border-slate-700/50 p-4 rounded-2xl">
-              <label className="text-cyan-400 font-bold mb-2 block text-sm">{t('Target Parcel for Inspection:')}</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-cyan-400 font-bold block text-sm">{t('Target Parcel for Inspection / Edit:')}</label>
+                {inspParcelId && (
+                  <button
+                    type="button"
+                    onClick={() => handleSelectExistingParcel('')}
+                    className="px-2.5 py-1 bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/40 text-cyan-300 hover:text-white rounded-lg text-xs font-semibold transition flex items-center gap-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>{t('Switch to Create New')}</span>
+                  </button>
+                )}
+              </div>
               <select
                 value={inspParcelId}
                 onChange={(e) => handleSelectExistingParcel(e.target.value)}
@@ -1641,14 +1723,50 @@ export const FieldSurveyMobile = () => {
 </div>
 </div>
 
-            <button
-              type="submit"
-              disabled={!canSurvey}
-              className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-bold rounded-xl text-xs transition shadow-lg shadow-cyan-950/50 flex items-center justify-center gap-2"
-            >
-              {!canSurvey ? <Lock className="w-4 h-4" /> : <FileCheck className="w-4 h-4" />}
-              <span>{t('Save Parcel & LARR Inspection Report')}</span>
-            </button>
+            {inspParcelId ? (
+              <div className="space-y-3 pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={handleUpdateParcel}
+                    disabled={!canSurvey}
+                    className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-slate-950 font-bold rounded-xl text-xs transition shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>{t('Save Changes & Update Parcel')}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDeleteParcel}
+                    disabled={!canSurvey}
+                    className="w-full py-3 bg-rose-950/60 hover:bg-rose-900 border border-rose-500/40 text-rose-300 hover:text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4 text-rose-400" />
+                    <span>{t('Delete Parcel')}</span>
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleInspectionSubmit}
+                  disabled={!canSurvey || inspLoading}
+                  className="w-full py-2.5 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/30 text-cyan-300 hover:text-white font-semibold rounded-xl text-xs transition flex items-center justify-center gap-2"
+                >
+                  <FileCheck className="w-4 h-4 text-cyan-400" />
+                  <span>{inspLoading ? t('Submitting Inspection...') : t('Submit Field Inspection Report Only')}</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                type="submit"
+                disabled={!canSurvey}
+                className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-bold rounded-xl text-xs transition shadow-lg shadow-cyan-950/50 flex items-center justify-center gap-2"
+              >
+                {!canSurvey ? <Lock className="w-4 h-4" /> : <FileCheck className="w-4 h-4" />}
+                <span>{t('Create New Parcel & Submit LARR Report')}</span>
+              </button>
+            )}
           </form>
 
 </div>
