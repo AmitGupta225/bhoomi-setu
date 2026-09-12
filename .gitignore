@@ -10,9 +10,19 @@ yarn-debug.log*
 yarn-error.log*
 .DS_Store
 
-# Mock database files (auth, project, parcel, finance, surveys) ARE committed so Render has full demo data on first boot
+# SQLite database files and runtime journals (seedData.json is the source of truth)
+backend/data/*.db
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+
 
 # Vite / React
 frontend/node_modules/
 frontend/dist/
 frontend/.env
+

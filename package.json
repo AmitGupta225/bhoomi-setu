@@ -1,0 +1,16 @@
+{
+  "name": "bhoomi-setu",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bhoomi Setu - National Land Acquisition & Management System",
+  "scripts": {
+    "build": "npm --prefix frontend install && npm --prefix frontend run build && npm --prefix backend install",
+    "start": "node backend/server.js",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "install:all": "npm --prefix frontend install && npm --prefix backend install"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

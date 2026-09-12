@@ -1,7 +1,16 @@
 import { query, queryOne, run } from '../db.js';
-import crypto from 'crypto';
-import bcrypt from 'bcryptjs';
 
+const sendNotification = async (text, targetRole = 'ALL') => {
+  try {
+    await run(`INSERT INTO auth.notifications (text, target_role, unread) VALUES (?, ?, 1)`, [text, targetRole]);
+  } catch (err) {
+    try {
+      await run(`INSERT INTO notifications (text, target_role, unread) VALUES (?, ?, 1)`, [text, targetRole]);
+    } catch (fallbackErr) {
+      console.warn('Failed to insert notification:', fallbackErr.message);
+    }
+  }
+};
 
 
 export const handler_6 = async (req, res) => {
@@ -183,14 +192,10 @@ export const handler_9 = async (req, res) => {
     );
 
     // Broadcast Real-time In-App Notification
-    try {
-      await run(
-        `INSERT INTO auth.notifications (text, target_role, unread) VALUES (?, ?, 1)`,
-        [`[New Parcel Mapped] Plot #${survey_number.trim()} (${ulpin}) in ${village.trim()} created by ${owner_name.trim() || 'Field Surveyor'}`, 'ALL']
-      );
-    } catch (notifErr) {
-      console.warn('Failed to insert notification for new parcel:', notifErr.message);
-    }
+    await sendNotification(
+      `[New Parcel Mapped] Plot #${survey_number.trim()} (${ulpin}) in ${village.trim()} created by ${owner_name.trim() || 'Field Surveyor'}`,
+      'ALL'
+    );
 
     res.json({ success: true, message: 'New multi-vertex land parcel created successfully', parcelId: id, ulpin });
   } catch (err) {
@@ -316,14 +321,10 @@ export const handler_update_parcel = async (req, res) => {
     );
 
     // Broadcast Real-time In-App Notification
-    try {
-      await run(
-        `INSERT INTO auth.notifications (text, target_role, unread) VALUES (?, ?, 1)`,
-        [`[Parcel Modified] Plot #${survey_number ? survey_number.trim() : existing.survey_number} (${existing.ulpin}) in ${village ? village.trim() : existing.village} updated by ${user_name || role || 'Field Surveyor'}`, 'ALL']
-      );
-    } catch (notifErr) {
-      console.warn('Failed to insert notification for parcel update:', notifErr.message);
-    }
+    await sendNotification(
+      `[Parcel Modified] Plot #${survey_number ? survey_number.trim() : existing.survey_number} (${existing.ulpin}) in ${village ? village.trim() : existing.village} updated by ${user_name || role || 'Field Surveyor'}`,
+      'ALL'
+    );
 
     const updatedRow = await queryOne(`SELECT * FROM parcels WHERE id = ?`, [id]);
     res.json({
@@ -359,14 +360,10 @@ export const handler_delete_parcel = async (req, res) => {
     );
 
     // Broadcast Real-time In-App Notification
-    try {
-      await run(
-        `INSERT INTO auth.notifications (text, target_role, unread) VALUES (?, ?, 1)`,
-        [`[Parcel Deleted] Plot #${existing.survey_number} (${existing.ulpin}) in ${existing.village} permanently deleted by ${user_name || role || 'Field Surveyor'}`, 'ALL']
-      );
-    } catch (notifErr) {
-      console.warn('Failed to insert notification for parcel delete:', notifErr.message);
-    }
+    await sendNotification(
+      `[Parcel Deleted] Plot #${existing.survey_number} (${existing.ulpin}) in ${existing.village} permanently deleted by ${user_name || role || 'Field Surveyor'}`,
+      'ALL'
+    );
 
     res.json({
       success: true,

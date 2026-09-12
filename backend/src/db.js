@@ -33,7 +33,7 @@ export const surveysDb = new sqlite3.Database(surveysDbPath);
 // Primary Entry Connection
 export const db = projectsDb;
 
-const runOn = (database, sql, params = []) => {
+export const runOn = (database, sql, params = []) => {
   return new Promise((resolve, reject) => {
     database.run(sql, params, function (err) {
       if (err) reject(err);
@@ -46,7 +46,7 @@ export const query = (sql, params = []) => {
   return new Promise((resolve, reject) => {
     db.all(sql, params, (err, rows) => {
       if (err) reject(err);
-      else resolve(rows);
+      else resolve(rows || []);
     });
   });
 };
@@ -67,6 +67,142 @@ export const run = (sql, params = []) => {
       else resolve({ lastID: this.lastID, changes: this.changes });
     });
   });
+};
+
+// Auto-seed datasets from seedData.json if database is fresh
+const seedFromJson = async () => {
+  const seedPath = path.join(__dirname, 'data/seedData.json');
+  if (!fs.existsSync(seedPath)) {
+    console.log('Notice: seedData.json not present, skipping json seed.');
+    return;
+  }
+
+  try {
+    const raw = fs.readFileSync(seedPath, 'utf8');
+    const seed = JSON.parse(raw);
+
+    console.log('Seeding initial datasets from seedData.json...');
+
+    // Projects
+    if (Array.isArray(seed.projects)) {
+      for (const p of seed.projects) {
+        await runOn(projectsDb, `
+          INSERT OR IGNORE INTO projects (id, code, name, ministry, agency, state, district, project_type, total_land_proposed_ha, total_land_acquired_ha, estimated_budget_cr, compensation_disbursed_cr, affected_families, displaced_families, current_stage_id, status, created_at, target_completion_date, center_lat, center_lng)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [p.id, p.code, p.name, p.ministry, p.agency, p.state, p.district, p.project_type, p.total_land_proposed_ha, p.total_land_acquired_ha, p.estimated_budget_cr, p.compensation_disbursed_cr, p.affected_families, p.displaced_families, p.current_stage_id, p.status, p.created_at, p.target_completion_date, p.center_lat, p.center_lng]);
+      }
+    }
+
+    // Parcels
+    if (Array.isArray(seed.parcels)) {
+      for (const p of seed.parcels) {
+        await runOn(projectsDb, `
+          INSERT OR IGNORE INTO parcels (id, ulpin, project_id, survey_number, khata_number, village, tehsil, district, state, area_ha, land_type, owner_name, owner_email, owner_aadhaar_hash, owner_contact, market_rate_sqm, statutory_multiplier, status, geojson, lat, lng, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [p.id, p.ulpin, p.project_id, p.survey_number, p.khata_number, p.village, p.tehsil, p.district, p.state, p.area_ha, p.land_type, p.owner_name, p.owner_email, p.owner_aadhaar_hash, p.owner_contact, p.market_rate_sqm, p.statutory_multiplier, p.status, typeof p.geojson === 'object' ? JSON.stringify(p.geojson) : p.geojson, p.lat, p.lng, p.created_at]);
+      }
+    }
+
+    // Workflow Stages
+    if (Array.isArray(seed.workflow_stages)) {
+      for (const s of seed.workflow_stages) {
+        await runOn(projectsDb, `
+          INSERT OR IGNORE INTO workflow_stages (id, project_id, stage_number, stage_name, description, status, assigned_role, approval_date, approved_by, comments, document_ref)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [s.id, s.project_id, s.stage_number, s.stage_name, s.description, s.status, s.assigned_role, s.approval_date, s.approved_by, s.comments, s.document_ref]);
+      }
+    }
+
+    // Grievances
+    if (Array.isArray(seed.grievances)) {
+      for (const g of seed.grievances) {
+        await runOn(projectsDb, `
+          INSERT OR IGNORE INTO grievances (id, token_no, ulpin, owner_name, owner_email, description, status, remarks, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [g.id, g.token_no, g.ulpin, g.owner_name, g.owner_email, g.description, g.status, g.remarks, g.created_at]);
+      }
+    }
+
+    // Dynamic Translations
+    if (Array.isArray(seed.dynamic_translations)) {
+      for (const t of seed.dynamic_translations) {
+        await runOn(projectsDb, `
+          INSERT OR IGNORE INTO dynamic_translations (source_text, target_lang, translated_text, created_at)
+          VALUES (?, ?, ?, ?)
+        `, [t.source_text, t.target_lang, t.translated_text, t.created_at || new Date().toISOString()]);
+      }
+    }
+
+    // Compensation
+    if (Array.isArray(seed.compensation)) {
+      for (const c of seed.compensation) {
+        await runOn(financeDb, `
+          INSERT OR IGNORE INTO compensation (id, parcel_id, project_id, land_value_rs, structure_assets_rs, solatium_100_percent_rs, interest_amount_rs, total_assessed_rs, total_disbursed_rs, disbursement_status, pfms_reference_no, bank_account_masked, ifsc_code, payment_date)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [c.id, c.parcel_id, c.project_id, c.land_value_rs, c.structure_assets_rs, c.solatium_100_percent_rs, c.interest_amount_rs, c.total_assessed_rs, c.total_disbursed_rs, c.disbursement_status, c.pfms_reference_no, c.bank_account_masked, c.ifsc_code, c.payment_date]);
+      }
+    }
+
+    // R&R Records
+    if (Array.isArray(seed.rr_records)) {
+      for (const r of seed.rr_records) {
+        await runOn(financeDb, `
+          INSERT OR IGNORE INTO rr_records (id, project_id, parcel_id, family_head_name, category, family_members_count, is_displaced, housing_allotted, employment_status, r_and_r_package_value_rs, amount_disbursed_rs, status)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [r.id, r.project_id, r.parcel_id, r.family_head_name, r.category, r.family_members_count, r.is_displaced, r.housing_allotted, r.employment_status, r.r_and_r_package_value_rs, r.amount_disbursed_rs, r.status]);
+      }
+    }
+
+    // Field Surveys
+    if (Array.isArray(seed.field_surveys)) {
+      for (const fs of seed.field_surveys) {
+        await runOn(surveysDb, `
+          INSERT OR IGNORE INTO field_surveys (id, project_id, parcel_id, surveyor_name, surveyor_id, gps_lat, gps_lng, land_condition, land_type, affected_families_count, structures_count, trees_count, is_tribal_land, consent_obtained, inspection_date, photo_url, verification_notes, status)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [fs.id, fs.project_id, fs.parcel_id, fs.surveyor_name, fs.surveyor_id, fs.gps_lat, fs.gps_lng, fs.land_condition, fs.land_type, fs.affected_families_count, fs.structures_count, fs.trees_count, fs.is_tribal_land, fs.consent_obtained, fs.inspection_date, fs.photo_url, fs.verification_notes, fs.status]);
+      }
+    }
+
+    // Documents
+    if (Array.isArray(seed.documents)) {
+      for (const d of seed.documents) {
+        await runOn(surveysDb, `
+          INSERT OR IGNORE INTO documents (id, project_id, title, doc_type, file_name, file_hash_sha256, is_esign_verified, uploaded_by, uploaded_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [d.id, d.project_id, d.title, d.doc_type, d.file_name, d.file_hash_sha256, d.is_esign_verified, d.uploaded_by, d.uploaded_at]);
+      }
+    }
+
+    // Notifications
+    if (Array.isArray(seed.notifications)) {
+      for (const n of seed.notifications) {
+        await runOn(authDb, `
+          INSERT OR IGNORE INTO notifications (id, text, created_at, unread, target_role)
+          VALUES (?, ?, ?, ?, ?)
+        `, [n.id, n.text, n.created_at, n.unread, n.target_role]);
+        try {
+          await runOn(projectsDb, `
+            INSERT OR IGNORE INTO notifications (id, text, created_at, unread, target_role)
+            VALUES (?, ?, ?, ?, ?)
+          `, [n.id, n.text, n.created_at, n.unread, n.target_role]);
+        } catch (e) {}
+      }
+    }
+
+    // Users from seedData
+    if (Array.isArray(seed.users)) {
+      for (const u of seed.users) {
+        await runOn(authDb, `
+          INSERT OR IGNORE INTO users (id, email, password, name, role_key, created_at)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `, [u.id, u.email.toLowerCase(), u.password, u.name, (u.role_key || 'COLLECTOR').toUpperCase(), u.created_at || new Date().toISOString()]);
+      }
+    }
+
+    console.log('SeedData successfully applied.');
+  } catch (err) {
+    console.error('Error seeding from seedData.json:', err.message);
+  }
 };
 
 // Initialize Schemas & Attach Sub-Databases
@@ -284,6 +420,29 @@ export const initDb = async () => {
     )
   `);
 
+  // Mirror notifications and audit_logs on projectsDb to ensure zero-fail queries without requiring ATTACH
+  await runOn(projectsDb, `
+    CREATE TABLE IF NOT EXISTS notifications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      text TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      unread BOOLEAN DEFAULT 1,
+      target_role TEXT DEFAULT 'ALL'
+    )
+  `);
+
+  await runOn(projectsDb, `
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      user_role TEXT NOT NULL,
+      user_name TEXT NOT NULL,
+      action TEXT NOT NULL,
+      details TEXT,
+      ip_address TEXT DEFAULT '127.0.0.1'
+    )
+  `);
+
   // Attach all domain databases to the primary connection for seamless cross-domain queries
   try {
     await runOn(projectsDb, `ATTACH DATABASE ? AS auth`, [authDbPath]);
@@ -296,6 +455,20 @@ export const initDb = async () => {
   try {
     await runOn(projectsDb, `ATTACH DATABASE ? AS surveys`, [surveysDbPath]);
   } catch (e) { /* ignore if already attached */ }
+
+  // Check if fresh database needs auto-seeding
+  try {
+    const existingProjects = await queryOne('SELECT count(*) as count FROM projects');
+    if (!existingProjects || existingProjects.count === 0) {
+      console.log('Fresh database detected (0 projects). Triggering automatic JSON seed...');
+      await seedFromJson();
+    } else {
+      console.log(`Database verified with ${existingProjects.count} existing projects.`);
+    }
+  } catch (seedErr) {
+    console.warn('Auto-seed check notice:', seedErr.message);
+    await seedFromJson();
+  }
 
   // --- Seed & Synchronize Demo Stakeholder Users ---
   console.log('Synchronizing core demo stakeholder users...');
@@ -378,4 +551,44 @@ export const initDb = async () => {
   console.log('Multi-database architecture (auth.db, projects.db, finance.db, surveys.db) initialized.');
 };
 
+// Database Health Diagnostics
+export const getDbHealth = async () => {
+  try {
+    const [projCount, parcelCount, userCount, notifCount] = await Promise.all([
+      queryOne('SELECT count(*) as c FROM projects').catch(() => ({ c: 0 })),
+      queryOne('SELECT count(*) as c FROM parcels').catch(() => ({ c: 0 })),
+      new Promise((res) => authDb.get('SELECT count(*) as c FROM users', (err, row) => res(row || { c: 0 }))),
+      queryOne('SELECT count(*) as c FROM notifications').catch(() => ({ c: 0 }))
+    ]);
+
+    return {
+      healthy: true,
+      projects: projCount?.c || 0,
+      parcels: parcelCount?.c || 0,
+      users: userCount?.c || 0,
+      notifications: notifCount?.c || 0
+    };
+  } catch (err) {
+    return {
+      healthy: false,
+      error: err.message
+    };
+  }
+};
+
+export const closeDatabases = () => {
+  return new Promise((resolve) => {
+    let pending = 4;
+    const done = () => {
+      pending--;
+      if (pending <= 0) resolve();
+    };
+    try { authDb.close(done); } catch (_) { done(); }
+    try { projectsDb.close(done); } catch (_) { done(); }
+    try { financeDb.close(done); } catch (_) { done(); }
+    try { surveysDb.close(done); } catch (_) { done(); }
+  });
+};
+
 export default projectsDb;
+
