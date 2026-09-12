@@ -241,13 +241,8 @@ export const FieldSurveyMobile = () => {
     }
   };
   
-  // Default vertices (non-square 4-point polygon around project center)
-  const [vertices, setVertices] = useState([
-    { lat: 19.7280, lng: 72.8440 },
-    { lat: 19.7292, lng: 72.8465 },
-    { lat: 19.7275, lng: 72.8475 },
-    { lat: 19.7265, lng: 72.8445 }
-  ]);
+  // Default vertices: clean start with 0 points (points added only when surveyor records them)
+  const [vertices, setVertices] = useState([]);
 
   const [userLocation, setUserLocation] = useState(null);
   const [locateTrigger, setLocateTrigger] = useState(0);
@@ -412,13 +407,6 @@ export const FieldSurveyMobile = () => {
         const pLng = parseFloat(activeProj.center_lng);
         setSearchTarget({ lat: pLat, lng: pLng });
         setIsUserLocationActive(false);
-        
-        setVertices([
-          { lat: parseFloat((pLat).toFixed(5)), lng: parseFloat((pLng - 0.001).toFixed(5)) },
-          { lat: parseFloat((pLat + 0.0012).toFixed(5)), lng: parseFloat((pLng + 0.0015).toFixed(5)) },
-          { lat: parseFloat((pLat - 0.0005).toFixed(5)), lng: parseFloat((pLng + 0.0025).toFixed(5)) },
-          { lat: parseFloat((pLat - 0.0015).toFixed(5)), lng: parseFloat((pLng - 0.0005).toFixed(5)) }
-        ]);
         setCustomLat(pLat.toFixed(6));
         setCustomLng(pLng.toFixed(6));
       }
@@ -1101,7 +1089,7 @@ export const FieldSurveyMobile = () => {
               </button>
 
               <MapContainer
-                center={[vertices[0]?.lat || 19.7280, vertices[0]?.lng || 72.8450]}
+                center={[vertices[0]?.lat || searchTarget?.lat || 19.7280, vertices[0]?.lng || searchTarget?.lng || 72.8450]}
                 zoom={16}
                 className="w-full h-full"
                 style={{ backgroundColor: '#0a1628' }}
