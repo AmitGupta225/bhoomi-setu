@@ -367,13 +367,13 @@ export const GisSpatialViewer = () => {
     osm: {
       url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap India</a>',
-      maxNativeZoom: 19,
+      maxNativeZoom: 18,
       maxZoom: 22
     },
     satellite: {
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       attribution: '&copy; Esri World Imagery',
-      maxNativeZoom: 19,
+      maxNativeZoom: 18,
       maxZoom: 22
     }
   };
