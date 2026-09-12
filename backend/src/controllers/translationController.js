@@ -40,35 +40,57 @@ export const translateText = async (req, res) => {
       });
     }
 
-    // 2. Fetch Translation via MyMemory Translation Engine
+    // 2. Multi-Engine Translation Pipeline:
+    // Engine 1: Google Translate Client API (Fastest, highest accuracy for Indian languages)
+    // Engine 2: MyMemory Translation API (Fallback)
     let translated = cleanText;
+    let engineUsed = 'none';
+
     try {
-      const pair = `${sourceLang}|${targetLang}`;
-      const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanText)}&langpair=${encodeURIComponent(pair)}`;
-      const response = await fetch(url, {
+      const gUrl = `https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=${sourceLang}&tl=${targetLang}&q=${encodeURIComponent(cleanText)}`;
+      const gRes = await fetch(gUrl, {
         headers: {
-          'User-Agent': 'BhoomiSetu-GovPortal/1.0'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
         },
-        signal: AbortSignal.timeout(5000)
+        signal: AbortSignal.timeout(4000)
       });
 
-      if (response.ok) {
-        const json = await response.json();
-        if (json && json.responseData && json.responseData.translatedText) {
-          const result = json.responseData.translatedText.trim();
-          // Verify result is valid and not an error code
-          if (result && !result.startsWith('MYMEMORY WARNING:')) {
-            translated = result;
-          }
+      if (gRes.ok) {
+        const gData = await gRes.json();
+        if (Array.isArray(gData) && Array.isArray(gData[0]) && typeof gData[0][0] === 'string' && gData[0][0].trim()) {
+          translated = gData[0][0].trim();
+          engineUsed = 'google';
         }
       }
-    } catch (networkErr) {
-      console.warn(`[TranslationBridge] Network translation failed for "${cleanText}" to ${targetLang}:`, networkErr.message);
-      return res.json({
-        success: true,
-        translated: cleanText,
-        fallback: true
-      });
+    } catch (gErr) {
+      console.warn(`[TranslationBridge] Google engine failed for "${cleanText}" to ${targetLang}:`, gErr.message);
+    }
+
+    // Fallback: MyMemory API if Google didn't return a translation
+    if (translated === cleanText) {
+      try {
+        const pair = `${sourceLang}|${targetLang}`;
+        const mUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanText)}&langpair=${encodeURIComponent(pair)}`;
+        const mRes = await fetch(mUrl, {
+          headers: {
+            'User-Agent': 'BhoomiSetu-GovPortal/1.0'
+          },
+          signal: AbortSignal.timeout(4000)
+        });
+
+        if (mRes.ok) {
+          const mJson = await mRes.json();
+          if (mJson && mJson.responseData && mJson.responseData.translatedText) {
+            const mResult = mJson.responseData.translatedText.trim();
+            if (mResult && !mResult.startsWith('MYMEMORY WARNING:')) {
+              translated = mResult;
+              engineUsed = 'mymemory';
+            }
+          }
+        }
+      } catch (mErr) {
+        console.warn(`[TranslationBridge] MyMemory fallback failed for "${cleanText}" to ${targetLang}:`, mErr.message);
+      }
     }
 
     // 3. Cache into SQLite for all future requests

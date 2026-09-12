@@ -235,6 +235,54 @@ export const AuthProvider = ({ children }) => {
     setAppLanguage(language === 'en' ? 'hi' : 'en');
   };
 
+// Dynamic translation queue & deduplication for on-the-fly dynamic content
+const pendingTranslations = new Set();
+let dynamicSyncTimeout = null;
+const dynamicBatch = [];
+
+const queueDynamicTranslation = (rawText, targetLang, onTranslated) => {
+  const trimmed = (rawText || '').trim();
+  if (!trimmed || trimmed.length < 2 || trimmed.length > 200) return;
+  // Skip numbers, system IDs, codes, URLs, emails
+  if (!/[a-zA-Z]/.test(trimmed)) return;
+  if (/^(PROJ|PARCEL|SURV|DOC|USER|CASE|DISB|REC)-/i.test(trimmed)) return;
+  if (/^[A-Z0-9_\-\/]+$/.test(trimmed)) return;
+  if (trimmed.includes('@') || trimmed.startsWith('http') || trimmed.startsWith('/')) return;
+
+  const queueKey = `${targetLang}::${trimmed}`;
+  if (pendingTranslations.has(queueKey)) return;
+  pendingTranslations.add(queueKey);
+
+  dynamicBatch.push({ text: trimmed, lang: targetLang });
+
+  if (dynamicSyncTimeout) clearTimeout(dynamicSyncTimeout);
+  dynamicSyncTimeout = setTimeout(async () => {
+    const itemsToProcess = dynamicBatch.splice(0, dynamicBatch.length);
+    if (itemsToProcess.length === 0) return;
+
+    let hasNew = false;
+    for (const item of itemsToProcess) {
+      try {
+        const cacheKey = `bhoomi_dyn_${item.lang}`;
+        const curCache = JSON.parse(localStorage.getItem(cacheKey) || '{}');
+        if (curCache[item.text]) continue;
+
+        const res = await translateDynamicText(item.text, item.lang);
+        if (res && res.success && res.translated && res.translated !== item.text) {
+          curCache[item.text] = res.translated;
+          localStorage.setItem(cacheKey, JSON.stringify(curCache));
+          hasNew = true;
+        }
+      } catch (e) {
+        console.warn('Queue translation error:', e);
+      }
+    }
+    if (hasNew && onTranslated) {
+      onTranslated();
+    }
+  }, 300);
+};
+
   // Synchronous, high-speed translation resolver
   const t = useCallback((key) => {
     if (!key || typeof key !== 'string') return key;
@@ -267,6 +315,11 @@ export const AuthProvider = ({ children }) => {
       if (dynCache[key]) return dynCache[key];
       if (dynCache[key.trim()]) return dynCache[key.trim()];
     } catch {}
+
+    // Auto-queue unknown dynamic user strings for background on-the-fly translation
+    queueDynamicTranslation(key, language, () => {
+      setLocaleVersion(v => v + 1);
+    });
 
     return key;
   }, [language, localeVersion]);
