@@ -420,10 +420,46 @@ export const FieldSurveyMobile = () => {
         activeProjId = projList[0].id;
       }
       if (activeProjId) setNewProjId(activeProjId);
-      
-      // Fly to active project's location
+
+      // Reset any active inspection/form selection from previous project
+      setInspParcelId('');
+      setNewSurveyNo('');
+      setNewKhataNo('');
+      setNewVillage('');
+      setNewOwnerName('');
+      setNewOwnerContact('');
+      setNewAddress('');
+      setVertices([]);
+      setManualAreaHa(null);
+
+      // On switching active project, automatically move the map to a parcel of that project
+      let targetLat = null;
+      let targetLng = null;
+
+      if (pList && pList.length > 0) {
+        for (const p of pList) {
+          if (p.lat && p.lng && !isNaN(parseFloat(p.lat)) && !isNaN(parseFloat(p.lng))) {
+            targetLat = parseFloat(p.lat);
+            targetLng = parseFloat(p.lng);
+            break;
+          }
+          const coords = extractPolygonCoordinates(p);
+          if (coords && coords.length > 0 && coords[0] && coords[0][0] && coords[0][1]) {
+            targetLat = parseFloat(coords[0][0]);
+            targetLng = parseFloat(coords[0][1]);
+            break;
+          }
+        }
+      }
+
       const activeProj = projList ? projList.find(p => p.id === activeProjId) : null;
-      if (activeProj && activeProj.center_lat && activeProj.center_lng) {
+
+      if (targetLat !== null && targetLng !== null) {
+        setSearchTarget({ lat: targetLat, lng: targetLng });
+        setIsUserLocationActive(false);
+        setCustomLat(targetLat.toFixed(6));
+        setCustomLng(targetLng.toFixed(6));
+      } else if (activeProj && activeProj.center_lat && activeProj.center_lng) {
         const pLat = parseFloat(activeProj.center_lat);
         const pLng = parseFloat(activeProj.center_lng);
         setSearchTarget({ lat: pLat, lng: pLng });
